@@ -1,0 +1,314 @@
+openapi: 3.0.3
+
+info:
+  title: Auth Service API
+  description: Auth Service API
+  version: 1.0.0
+
+servers:
+  - url: 'http://localhost:8080/api'
+    description: 'Local Server'
+
+paths:
+  /auth/register:
+    post:
+      summary: Register a new user
+      operationId: register
+      tags:
+        - auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '200':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CommonResponse'
+                  - type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Custom success message
+                        example: "Registration successful"
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/500InternalError'
+  /auth/login:
+    post:
+      summary: Login a user
+      operationId: login
+      tags:
+        - auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: User logged in successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CommonResponse'
+                  - type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Custom success message
+                        example: "Login successful"
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/500InternalError'
+  /auth/login-oauth:
+    post:
+      summary: Login a user using OAuth
+      operationId: loginOAuth
+      tags:
+        - auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OAuthLoginRequest'
+      responses:
+        '200':
+          description: User logged in successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CommonResponse'
+                  - type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Custom success message
+                        example: "Login successful"
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/500InternalError'
+  /auth/verify-email-for-register:
+    post:
+      summary: Verify email for registration
+      operationId: verifyEmailForRegister
+      tags:
+        - auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyEmailRequest'
+      responses:
+        '200':
+          description: Email verified successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CommonResponse'
+                  - type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Custom success message
+                        example: "Email verified successfully"
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/500InternalError'
+  /auth/resend-email-verification-code-for-registration:
+    post:
+      summary: Resend email verification code for registration
+      operationId: resendEmailVerificationCodeForRegistration
+      tags:
+        - auth
+      responses:
+        '200':
+          description: Email verification code sent successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CommonResponse'
+                  - type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Custom success message
+                        example: "Email verification code sent successfully"
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/500InternalError'
+  /auth/forgot-password:
+    post:
+      summary: Forgot password
+      operationId: forgotPassword
+      tags:
+        - auth
+      responses:
+        '200':
+          description: Password reset link sent successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CommonResponse'
+                  - type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Custom success message
+                        example: "Verification code sent to email"
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/500InternalError'
+  /auth/reset-password:
+    post:
+      summary: Reset password
+      operationId: resetPassword
+      tags:
+        - auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+      responses:
+        '200':
+          description: Password reset successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CommonResponse'
+                  - type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Custom success message
+                        example: "Password reset successfully"
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/500InternalError'
+
+components:
+  schemas:
+    CommonResponse:
+      type: object
+      properties:
+        errorCode:
+          type: string
+          nullable: true
+          description: Error code for the response, null if the operation is successful
+          example: null
+        message:
+          type: string
+          description: Response message
+          example: "Operation successful"
+        data:
+          type: object
+          nullable: true
+          description: Additional data for the response
+    RegisterRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          description: User email
+          example: "john.doe@example.com"
+        password:
+          type: string
+          description: User password
+          example: "password"
+        username:
+          type: string
+          description: User username
+          example: "johndoe"
+        displayName:
+          type: string
+          description: User display name
+          example: "John Doe"
+    500InternalError:
+      type: object
+      description: Internal Server Error Occurred
+      properties:
+        errorCode:
+          type: string
+          description: internalServerErrorOccurred
+          example: ERROR1
+        message:
+          type: string
+          description: Internal Server Error has Occurred
+          example: Internal Server Error has Occurred
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          description: User email
+          example: "john.doe@gmajl.com"
+        password:
+          type: string
+          description: User password
+          example: "password"
+    OAuthLoginRequest:
+      type: object
+      properties:
+        authorizationCode:
+          type: string
+          description: Authorization code from OAuth provider
+          example: "authorizationCode"
+    VerifyEmailRequest:
+      type: object
+      properties:
+        verificationCode:
+          type: string
+          description: "Verification code sent to the user's email"
+          example: "212038"
+    ResetPasswordRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          description: User email
+          example: "john.doe@gmail.com"
+        oldPassword:
+          type: string
+          description: User old password
+          example: "oldPassword"
+        newPassword:
+          type: string
+          description: User new password
+          example: "newPassword"
