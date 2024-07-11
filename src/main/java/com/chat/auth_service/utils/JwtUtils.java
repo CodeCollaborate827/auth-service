@@ -3,7 +3,6 @@ package com.chat.auth_service.utils;
 import com.chat.auth_service.entity.LoginHistory;
 import com.chat.auth_service.entity.User;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 
@@ -19,14 +18,12 @@ public class JwtUtils {
         Map<String, String> claims = Map.of("user_id", user.getId(),
                 "user_agent", loginHistory.getUserAgent(),
                 "ip_address", loginHistory.getIpAddress());
-
-        return Jwts
-                .builder()
-                .setSubject(user.getEmail())
-                .setClaims(claims)
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 1000L * 60 * 60 * 24 * 365)) // 1 year
-                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+        return Jwts.builder()
+                .claims(claims)
+                .subject(user.getEmail())
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10))
+                .signWith(getSigningKey(), Jwts.SIG.NONE)
                 .compact();
     }
 
