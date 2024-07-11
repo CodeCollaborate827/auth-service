@@ -20,7 +20,7 @@ public class AuthApiDelegatorImpl implements AuthApiDelegate {
     }
 
     @Override
-    public Mono<ResponseEntity<Login200Response>> loginOAuth(Mono<OAuthLoginRequest> oauthLoginRequest, ServerWebExchange exchange) {
+    public Mono<ResponseEntity<LoginOAuth200Response>> loginOAuth(Mono<OAuthLoginRequest> oauthLoginRequest, ServerWebExchange exchange) {
         return AuthApiDelegate.super.loginOAuth(oauthLoginRequest, exchange);
     }
 

@@ -11,37 +11,23 @@ import org.springframework.data.relational.core.mapping.Table;
 import java.time.LocalDateTime;
 
 @Data
-@Table(name = "users")
+@Table(name = "verification_code")
 @NoArgsConstructor
 @AllArgsConstructor
-public class User {
+public class VerificationCode {
     @Id
-    private String id;
-
-    private String username;
-
-    private String email;
-
-    private String passwordHash;
-
-    private AccountType accountType;
-
-    private AccountStatus accountStatus;
-
+    private Long id;
+    private String userId;
+    private LocalDateTime expiration;
+    private Type type;
+    private String code;
     @CreatedDate
     private LocalDateTime createdAt;
-
     @LastModifiedDate
     private LocalDateTime updatedAt;
 
-    public enum AccountType {
-        NORMAL,
-        GOOGLE
-    }
-
-    public enum AccountStatus {
-        ACTIVE,
-        INACTIVE,
-        UNVERIFIED
+    public enum Type {
+        VERIFY_EMAIL,
+        RESET_PASSWORD
     }
 }

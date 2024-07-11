@@ -11,37 +11,19 @@ import org.springframework.data.relational.core.mapping.Table;
 import java.time.LocalDateTime;
 
 @Data
-@Table(name = "users")
+@Table(name = "refresh_token")
 @NoArgsConstructor
 @AllArgsConstructor
-public class User {
+public class RefreshToken {
     @Id
-    private String id;
-
-    private String username;
-
-    private String email;
-
-    private String passwordHash;
-
-    private AccountType accountType;
-
-    private AccountStatus accountStatus;
-
+    private Long id;
+    private Long loginId;
+    private String refreshToken;
+    private Integer usageCount;
+    private Integer limitUsageCount;
+    private LocalDateTime lastUsed;
     @CreatedDate
     private LocalDateTime createdAt;
-
     @LastModifiedDate
     private LocalDateTime updatedAt;
-
-    public enum AccountType {
-        NORMAL,
-        GOOGLE
-    }
-
-    public enum AccountStatus {
-        ACTIVE,
-        INACTIVE,
-        UNVERIFIED
-    }
 }

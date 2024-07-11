@@ -11,37 +11,19 @@ import org.springframework.data.relational.core.mapping.Table;
 import java.time.LocalDateTime;
 
 @Data
-@Table(name = "users")
+@Table(name = "login_history")
 @NoArgsConstructor
 @AllArgsConstructor
-public class User {
+public class LoginHistory {
     @Id
-    private String id;
-
-    private String username;
-
-    private String email;
-
-    private String passwordHash;
-
-    private AccountType accountType;
-
-    private AccountStatus accountStatus;
-
+    private Long id;
+    private String userId;
+    private String ipAddress;
+    private String userAgent;
+    private Boolean isSuccessful;
+    private Boolean isSaved;
     @CreatedDate
     private LocalDateTime createdAt;
-
     @LastModifiedDate
     private LocalDateTime updatedAt;
-
-    public enum AccountType {
-        NORMAL,
-        GOOGLE
-    }
-
-    public enum AccountStatus {
-        ACTIVE,
-        INACTIVE,
-        UNVERIFIED
-    }
 }

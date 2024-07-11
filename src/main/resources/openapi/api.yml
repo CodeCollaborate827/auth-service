@@ -61,7 +61,7 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/CommonResponse'
+                  - $ref: '#/components/schemas/RefreshTokenResponse'
                   - type: object
                     properties:
                       message:
@@ -283,6 +283,14 @@ components:
           type: string
           description: User password
           example: "password"
+        ip_address:
+          type: string
+          description: User IP address
+          example: "123.123.123.123"
+        user_agent:
+          type: string
+          description: User agent
+          example: "Mozilla/5.0"
     OAuthLoginRequest:
       type: object
       properties:
@@ -312,3 +320,25 @@ components:
           type: string
           description: User new password
           example: "newPassword"
+    CommonErrorResponse:
+      type: object
+      properties:
+        errorCode:
+          type: string
+          description: Code of the error
+          example: "USER12"
+        message:
+          type: string
+          description: Response message
+          example: "Operation Failed"
+    RefreshTokenResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          description: New access token
+          example: "eyJhbGciO"
+        refreshToken:
+          type: string
+          description: New refresh token
+          example: "eyJhbGciO"

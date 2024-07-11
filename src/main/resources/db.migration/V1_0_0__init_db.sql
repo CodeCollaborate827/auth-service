@@ -3,7 +3,7 @@
 -- Create users table
 CREATE TABLE users (
                        id VARCHAR PRIMARY KEY,
-                       username INTEGER,
+                       username VARCHAR,
                        email VARCHAR,
                        passwordHash INTEGER,
                        account_type ENUM,
