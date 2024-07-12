@@ -27,8 +27,8 @@ public class MailUtils {
     @Value("${mail.path.register-verification-mail}")
     private String verificationMailPath;
 
-    @Value("${spring.mail.host}")
-    private String host;
+    @Value("${mail.from}")
+    private String from;
 
     @Async
     public CompletableFuture<Mono<Void>> sendVerificationEmail(String subject, User user, VerificationCode code) {
@@ -36,7 +36,7 @@ public class MailUtils {
         MimeMessage message = mailSender.createMimeMessage();
 
         try {
-            message.setFrom(new InternetAddress(host));
+            message.setFrom(new InternetAddress(from));
             message.addRecipient(MimeMessage.RecipientType.TO, new InternetAddress(user.getEmail()));
             message.setSubject(subject);
 
