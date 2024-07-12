@@ -8,7 +8,9 @@ public enum ErrorCode {
     USER_ERROR4("Username already taken", 409),
 
     AUTH_ERROR1("Invalid password", 401),
-    AUTH_ERROR2("", 401);
+    AUTH_ERROR2("", 401),
+
+    EMAIL_ERROR1("Cannot send email", 500);
 
     private final String errorMessage;
     private final int httpStatus;

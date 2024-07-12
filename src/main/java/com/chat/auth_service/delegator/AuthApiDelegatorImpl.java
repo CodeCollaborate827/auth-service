@@ -2,13 +2,18 @@ package com.chat.auth_service.delegator;
 
 import com.chat.auth_service.server.api.AuthApiDelegate;
 import com.chat.auth_service.server.model.*;
+import com.chat.auth_service.service.AuthService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 @Component
+@RequiredArgsConstructor
 public class AuthApiDelegatorImpl implements AuthApiDelegate {
+    private final AuthService authService;
+
     @Override
     public Mono<ResponseEntity<ForgotPassword200Response>> forgotPassword(ServerWebExchange exchange) {
         return AuthApiDelegate.super.forgotPassword(exchange);
@@ -16,7 +21,7 @@ public class AuthApiDelegatorImpl implements AuthApiDelegate {
 
     @Override
     public Mono<ResponseEntity<Login200Response>> login(Mono<LoginRequest> loginRequest, ServerWebExchange exchange) {
-        return AuthApiDelegate.super.login(loginRequest, exchange);
+        return authService.login(loginRequest);
     }
 
     @Override
@@ -26,7 +31,7 @@ public class AuthApiDelegatorImpl implements AuthApiDelegate {
 
     @Override
     public Mono<ResponseEntity<Register200Response>> register(Mono<RegisterRequest> registerRequest, ServerWebExchange exchange) {
-        return AuthApiDelegate.super.register(registerRequest, exchange);
+        return authService.register(registerRequest);
     }
 
     @Override

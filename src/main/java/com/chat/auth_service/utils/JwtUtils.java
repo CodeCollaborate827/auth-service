@@ -5,15 +5,21 @@ import com.chat.auth_service.entity.User;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.security.Key;
 import java.util.Date;
 import java.util.Map;
 
 public class JwtUtils {
-    private static final String SECRET_KEY = "462D4A614E645267556B58703272357538782F413F4428472B4B625065536856";
+    @Value("${jwt.secret-key}")
+    private static String SECRET_KEY;
+    @Value("${jwt.expiration-time-access-token}")
+    private static Long EXPIRATION_TIME_ACCESS_TOKEN;
+    @Value("${jwt.expiration-time-refresh-token}")
+    private static Long EXPIRATION_TIME_REFRESH_TOKEN;
 
-    public static String generateToken(User user, LoginHistory loginHistory) {
+    public static String generateAccessToken(User user, LoginHistory loginHistory) {
 
         Map<String, String> claims = Map.of("user_id", user.getId(),
                 "user_agent", loginHistory.getUserAgent(),
@@ -22,7 +28,20 @@ public class JwtUtils {
                 .claims(claims)
                 .subject(user.getEmail())
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10))
+                .expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME_ACCESS_TOKEN * 60 * 1000))
+                .signWith(getSigningKey(), Jwts.SIG.NONE)
+                .compact();
+    }
+
+    public static String generateRefreshToken(User user, LoginHistory loginHistory) {
+        Map<String, String> claims = Map.of("user_id", user.getId(),
+                "user_agent", loginHistory.getUserAgent(),
+                "ip_address", loginHistory.getIpAddress());
+        return Jwts.builder()
+                .claims(claims)
+                .subject(user.getEmail())
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME_REFRESH_TOKEN * 60 * 60 * 1000))
                 .signWith(getSigningKey(), Jwts.SIG.NONE)
                 .compact();
     }

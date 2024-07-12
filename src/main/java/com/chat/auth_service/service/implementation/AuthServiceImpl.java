@@ -4,13 +4,13 @@ import com.chat.auth_service.entity.*;
 import com.chat.auth_service.exception.ApplicationException;
 import com.chat.auth_service.exception.ErrorCode;
 import com.chat.auth_service.repository.*;
-import com.chat.auth_service.server.api.AuthApiDelegate;
 import com.chat.auth_service.server.model.Login200Response;
 import com.chat.auth_service.server.model.LoginRequest;
 import com.chat.auth_service.server.model.Register200Response;
 import com.chat.auth_service.server.model.RegisterRequest;
 import com.chat.auth_service.service.AuthService;
 import com.chat.auth_service.utils.JwtUtils;
+import com.chat.auth_service.utils.MailUtils;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +31,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenRepository refreshTokenRepository;
     private final VerificationCodeRepository verificationCodeRepository;
+    private final MailUtils mailUtils;
 
     @Override
     public Mono<ResponseEntity<Login200Response>> login(Mono<LoginRequest> loginRequest) {
@@ -87,7 +88,7 @@ public class AuthServiceImpl implements AuthService {
                                 .then(Mono.just(user));
 
                         // Generate and save refresh token
-                        String accessToken = JwtUtils.generateToken(user, loginHistory);
+                        String accessToken = JwtUtils.generateAccessToken(user, loginHistory);
                         return saveRefreshToken(user, loginHistory)
                                 .map(refreshToken -> ResponseEntity.ok(
                                         new Login200Response()
@@ -135,10 +136,8 @@ public class AuthServiceImpl implements AuthService {
                         ).flatMap(tuple -> {
                             User savedUser = tuple.getT1();
                             VerificationCode savedCode = tuple.getT3();
-
                             // Send verification email
-                            return sendVerificationEmail(savedUser.getEmail(), savedCode.getCode())
-                                    .thenReturn(savedUser);
+                            return Mono.fromFuture(() ->  mailUtils.sendVerificationEmail("Verify email", savedUser, savedCode)).then(Mono.just(savedUser));
                         });
                     }))
                     .map(savedUser -> {
@@ -154,18 +153,10 @@ public class AuthServiceImpl implements AuthService {
         return UUID.randomUUID().toString().substring(0, 6).toUpperCase();
     }
 
-    private Mono<Void> sendVerificationEmail(String email, String code) {
-        // Implement email sending logic here
-        // This could involve using a reactive email service
-        // For now, we'll just log it
-        System.out.println("Sending verification email to " + email + " with code: " + code);
-        return Mono.empty();
-    }
-
     private Mono<RefreshToken> saveRefreshToken(User user, LoginHistory loginHistory) {
         RefreshToken refreshToken = new RefreshToken();
         refreshToken.setLoginId(loginHistory.getId());
-        refreshToken.setRefreshToken(JwtUtils.generateToken(user, loginHistory));
+        refreshToken.setRefreshToken(JwtUtils.generateRefreshToken(user, loginHistory));
         refreshToken.setUsageCount(1);
         refreshToken.setLimitUsageCount(5);
 
