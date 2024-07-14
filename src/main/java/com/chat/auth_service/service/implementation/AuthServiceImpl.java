@@ -162,7 +162,7 @@ public class AuthServiceImpl implements AuthService {
                                                                 verificationCode.setCode(
                                                                         generateVerificationCode()); // Implement this method
                                                                 verificationCode.setExpiration(
-                                                                        LocalDateTime.now().plusHours(24)); // 24 hours validity
+                                                                        OffsetDateTime.now().plusHours(24)); // 24 hours validity
 
                                                                 return Mono.zip(
                                                                                 userRepository.save(newUser),
@@ -176,7 +176,7 @@ public class AuthServiceImpl implements AuthService {
                                                                                   return Mono.fromFuture(
                                                                                                   () ->
                                                                                                           mailUtils.sendVerificationEmail(
-                                                                                                                  "Verify email", savedUser, savedCode))
+                                                                                                                  "Verify email", savedUser.getEmail(), savedCode))
                                                                                           .then(Mono.just(savedUser));
                                                                                 });
                                                               }))
@@ -244,7 +244,6 @@ public class AuthServiceImpl implements AuthService {
               });
 
     });
-    return null;
   }
 
   private boolean checkExceedRateLimit(VerificationCode verificationCode) {
