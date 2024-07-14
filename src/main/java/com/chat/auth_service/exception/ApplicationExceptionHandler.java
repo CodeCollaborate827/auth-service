@@ -7,14 +7,14 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 
 @ControllerAdvice
 public class ApplicationExceptionHandler {
-    @ExceptionHandler(ApplicationException.class)
-    public ResponseEntity<CommonErrorResponse> handleException(ApplicationException ex) {
-        CommonErrorResponse commonErrorResponse = new CommonErrorResponse();
-        ErrorCode errorCode = ex.getErrorCode();
+  @ExceptionHandler(ApplicationException.class)
+  public ResponseEntity<CommonErrorResponse> handleException(ApplicationException ex) {
+    CommonErrorResponse commonErrorResponse = new CommonErrorResponse();
+    ErrorCode errorCode = ex.getErrorCode();
 
-        commonErrorResponse.errorCode(errorCode.name());
-        commonErrorResponse.setMessage(errorCode.getErrorMessage());
+    commonErrorResponse.errorCode(errorCode.name());
+    commonErrorResponse.setMessage(errorCode.getErrorMessage());
 
-        return ResponseEntity.status(errorCode.getHttpStatus()).body(commonErrorResponse);
-    }
+    return ResponseEntity.status(errorCode.getHttpStatus()).body(commonErrorResponse);
+  }
 }

@@ -1,30 +1,32 @@
 package com.chat.auth_service.exception;
 
 public enum ErrorCode {
+  AUTH_ERROR1("User not found", 404),
+  AUTH_ERROR2("User already exists", 409),
+  AUTH_ERROR3("User not verified", 401),
+  AUTH_ERROR4("Username already taken", 409),
 
-    USER_ERROR1("User not found", 404),
-    USER_ERROR2("User already exists", 409),
-    USER_ERROR3("User not verified", 401),
-    USER_ERROR4("Username already taken", 409),
+  AUTH_ERROR5("Invalid password", 401),
+  AUTH_ERROR6("", 401),
 
-    AUTH_ERROR1("Invalid password", 401),
-    AUTH_ERROR2("", 401),
+  AUTH_ERROR7("Cannot send email", 500),
+  AUTH_ERROR8("Invalid operation, valid types are [\"ACCOUNT_REGISTRATION\", \"FORGOT_PASSWORD\"]", 400),
+  AUTH_ERROR9("Invalid operation, user's account was already registered and verified", 400),
+  AUTH_ERROR10("Too many requests. Please try later", 400);
 
-    EMAIL_ERROR1("Cannot send email", 500);
+  private final String errorMessage;
+  private final int httpStatus;
 
-    private final String errorMessage;
-    private final int httpStatus;
+  ErrorCode(String errorMessage, int httpStatus) {
+    this.errorMessage = errorMessage;
+    this.httpStatus = httpStatus;
+  }
 
-    ErrorCode(String errorMessage, int httpStatus) {
-        this.errorMessage = errorMessage;
-        this.httpStatus = httpStatus;
-    }
+  public String getErrorMessage() {
+    return errorMessage;
+  }
 
-    public String getErrorMessage() {
-        return errorMessage;
-    }
-
-    public int getHttpStatus() {
-        return httpStatus;
-    }
+  public int getHttpStatus() {
+    return httpStatus;
+  }
 }

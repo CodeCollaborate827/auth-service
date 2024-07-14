@@ -1,5 +1,8 @@
 package com.chat.auth_service.entity;
 
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,22 +11,17 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.relational.core.mapping.Table;
 
-import java.time.LocalDateTime;
-
 @Data
 @Table(name = "refresh_token")
 @NoArgsConstructor
 @AllArgsConstructor
 public class RefreshToken {
-    @Id
-    private Long id;
-    private Long loginId;
-    private String refreshToken;
-    private Integer usageCount;
-    private Integer limitUsageCount;
-    private LocalDateTime lastUsed;
-    @CreatedDate
-    private LocalDateTime createdAt;
-    @LastModifiedDate
-    private LocalDateTime updatedAt;
+  @Id private UUID id;
+  private UUID loginId;
+  private String refreshToken;
+  private Integer usageCount;
+  private Integer limitUsageCount;
+  private LocalDateTime lastUsed;
+  @CreatedDate private OffsetDateTime createdAt;
+  @LastModifiedDate private OffsetDateTime updatedAt;
 }

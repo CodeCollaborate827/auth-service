@@ -106,10 +106,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/500InternalError'
-  /auth/verify-email-for-register:
+  /auth/verify-email:
     post:
-      summary: Verify email for registration
-      operationId: verifyEmailForRegister
+      summary: Verify email
+      operationId: verifyEmail
       tags:
         - auth
       requestBody:
@@ -126,44 +126,42 @@ paths:
               schema:
                 allOf:
                   - $ref: '#/components/schemas/CommonResponse'
-                  - type: object
-                    properties:
-                      message:
-                        type: string
-                        description: Custom success message
-                        example: "Email verified successfully"
         '500':
           description: Internal Server Error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/500InternalError'
-  /auth/resend-email-verification-code-for-registration:
+  /auth/resend-verification-email:
     post:
-      summary: Resend email verification code for registration
-      operationId: resendEmailVerificationCodeForRegistration
-      tags:
-        - auth
-      responses:
-        '200':
-          description: Email verification code sent successfully
+        summary: Resend email verification code
+        operationId: resendVerificationEmail
+        tags:
+            - auth
+        requestBody:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/CommonResponse'
-                  - type: object
-                    properties:
-                      message:
-                        type: string
-                        description: Custom success message
-                        example: "Email verification code sent successfully"
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/500InternalError'
+                $ref: '#/components/schemas/ResendVerificationEmailRequest'
+        responses:
+            '200':
+              description: Email verification code sent successfully
+              content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/CommonResponse'
+            '400':
+              description: Bad Request
+              content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/CommonErrorResponse'
+            '500':
+              description: Internal Server Error
+              content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/500InternalError'
   /auth/forgot-password:
     post:
       summary: Forgot password
@@ -228,19 +226,10 @@ components:
     CommonResponse:
       type: object
       properties:
-        errorCode:
-          type: string
-          nullable: true
-          description: Error code for the response, null if the operation is successful
-          example: null
         message:
           type: string
           description: Response message
           example: "Operation successful"
-        data:
-          type: object
-          nullable: true
-          description: Additional data for the response
     RegisterRequest:
       type: object
       properties:
@@ -320,6 +309,28 @@ components:
           type: string
           description: User new password
           example: "newPassword"
+    ResendVerificationEmailRequest:
+      type: object
+      properties:
+          type:
+            type: string
+            description: Type of email verification
+            example: "ACCOUNT_REGISTRATION"
+          email:
+            type: string
+            description: User email
+            example: "johndoe@example.com"
+    ResendVerificationEmailSuccessfulResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Response message
+          example: "Email verification code sent successfully"
+        retryAfterSeconds:
+            type: integer
+            description: Retry after seconds
+            example: 120
     CommonErrorResponse:
       type: object
       properties:
@@ -331,6 +342,7 @@ components:
           type: string
           description: Response message
           example: "Operation Failed"
+
     RefreshTokenResponse:
       type: object
       properties:
