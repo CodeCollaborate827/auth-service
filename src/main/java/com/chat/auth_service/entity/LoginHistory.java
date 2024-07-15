@@ -1,6 +1,5 @@
 package com.chat.auth_service.entity;
 
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 import lombok.AllArgsConstructor;

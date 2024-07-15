@@ -1,6 +1,5 @@
 package com.chat.auth_service.entity;
 
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
@@ -24,7 +23,6 @@ public class VerificationCode {
   private boolean regenerated;
   @CreatedDate private OffsetDateTime createdAt;
   @LastModifiedDate private OffsetDateTime updatedAt;
-
 
   // changing the Type enum requires the changes in ErrorCode.AUTH_ERROR9
   public enum Type {

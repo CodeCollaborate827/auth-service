@@ -52,8 +52,8 @@ public class AuthApiDelegatorImpl implements AuthApiDelegate {
   }
 
   @Override
-  public Mono<ResponseEntity<VerifyEmail200Response>> verifyEmail(
+  public Mono<ResponseEntity<VerifyEmailResponse>> verifyEmail(
       Mono<VerifyEmailRequest> verifyEmailRequest, ServerWebExchange exchange) {
-    return AuthApiDelegate.super.verifyEmail(verifyEmailRequest, exchange);
+    return authService.verifyEmail(verifyEmailRequest);
   }
 }

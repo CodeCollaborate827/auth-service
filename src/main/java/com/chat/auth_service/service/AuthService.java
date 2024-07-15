@@ -11,4 +11,7 @@ public interface AuthService {
 
   Mono<ResponseEntity<CommonResponse>> rendSendVerificationEmail(
       Mono<ResendVerificationEmailRequest> resendVerificationEmailRequest);
+
+  Mono<ResponseEntity<VerifyEmailResponse>> verifyEmail(
+      Mono<VerifyEmailRequest> verifyEmailRequest);
 }

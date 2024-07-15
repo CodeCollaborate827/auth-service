@@ -1,10 +1,6 @@
 package com.chat.auth_service.utils;
 
-import com.chat.auth_service.entity.User;
 import com.chat.auth_service.entity.VerificationCode;
-import com.chat.auth_service.exception.ApplicationException;
-import com.chat.auth_service.exception.ErrorCode;
-import jakarta.mail.MessagingException;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
 import java.io.IOException;
@@ -12,14 +8,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.concurrent.CompletableFuture;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import reactor.core.publisher.Mono;
 
 @Component
 @Slf4j
@@ -34,8 +28,7 @@ public class MailUtils {
   private String from;
 
   @Async("mailSenderThreadPoolTaskExecutor")
-  public void sendVerificationEmail(
-      String subject, String email, VerificationCode code) {
+  public void sendVerificationEmail(String subject, String email, VerificationCode code) {
     // send mail
     MimeMessage message = mailSender.createMimeMessage();
     // read this: https://stackoverflow.com/questions/24798695/spring-async-method-inside-a-service
@@ -45,7 +38,7 @@ public class MailUtils {
       message.setSubject(subject);
 
       String htmlTemplate = readFile(verificationMailPath);
-//      htmlTemplate = htmlTemplate.replace("${name}", user.getUsername());
+      //      htmlTemplate = htmlTemplate.replace("${name}", user.getUsername());
       htmlTemplate = htmlTemplate.replace("${verificationCode}", code.getCode());
       message.setContent(htmlTemplate, "text/html; charset=utf-8");
       log.info("Sending email ...");
