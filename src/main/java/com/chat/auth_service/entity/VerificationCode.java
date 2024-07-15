@@ -21,6 +21,7 @@ public class VerificationCode {
   private OffsetDateTime expiration;
   private Type type;
   private String code;
+  private boolean regenerated;
   @CreatedDate private OffsetDateTime createdAt;
   @LastModifiedDate private OffsetDateTime updatedAt;
 

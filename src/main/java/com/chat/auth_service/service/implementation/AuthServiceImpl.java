@@ -172,12 +172,11 @@ public class AuthServiceImpl implements AuthService {
                                                                                 tuple -> {
                                                                                   User savedUser = tuple.getT1();
                                                                                   VerificationCode savedCode = tuple.getT3();
-                                                                                  // Send verification email
-                                                                                  return Mono.fromFuture(
-                                                                                                  () ->
-                                                                                                          mailUtils.sendVerificationEmail(
-                                                                                                                  "Verify email", savedUser.getEmail(), savedCode))
-                                                                                          .then(Mono.just(savedUser));
+                                                                                  // Send verification
+
+                                                                                  mailUtils.sendVerificationEmail(
+                                                                                          "Verify email", savedUser.getEmail(), savedCode);
+                                                                                  return Mono.just(savedUser);
                                                                                 });
                                                               }))
                                               .map(
@@ -215,7 +214,7 @@ public class AuthServiceImpl implements AuthService {
                         .flatMap(verificationCode -> {
                           boolean exceededRateLimit = checkExceedRateLimit(verificationCode);
                           if (exceededRateLimit) {
-                            return Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR8));
+                            return Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR10));
                           }
 
                           return Mono.just(user);
@@ -236,6 +235,7 @@ public class AuthServiceImpl implements AuthService {
               .map(verificationCode -> {
 
                 // email is sent asynchronously
+                log.info("i am sending the verification email");
                 mailUtils.sendVerificationEmail("EMAIL VERIFICATION", request.getEmail(), verificationCode);
 
                 CommonResponse response = new CommonResponse();
@@ -249,22 +249,26 @@ public class AuthServiceImpl implements AuthService {
   private boolean checkExceedRateLimit(VerificationCode verificationCode) {
 //    verificationCode.get
     OffsetDateTime now = OffsetDateTime.now();
-    Duration between = Duration.between(now, verificationCode.getCreatedAt());
+    Duration between = Duration.between(verificationCode.getCreatedAt(), now);
+    log.info("now: {}", now);
+    log.info("createdAt: {}", verificationCode.getCreatedAt());
+
+    //TODO: use Bucket4j library for rate limit instead of checking the database
     return !now.isAfter(verificationCode.getCreatedAt()) || between.toSeconds() < 120; // TODO: this 120 value should be in application.properties
   }
 
   private ErrorCode validateResendEmailRequest(User user, String emailVerificationType) {
     // check if the request type for sending email is valid
-    boolean isValidRequestType = Objects.isNull(emailVerificationType) || Arrays.stream(
+    boolean isValidRequestType = Objects.nonNull(emailVerificationType) && Arrays.stream(
             values()).anyMatch(type -> type.name()
             .equals(emailVerificationType.toUpperCase()));
-    if (isValidRequestType) {
+    if (!isValidRequestType) {
       return ErrorCode.AUTH_ERROR8;
-
     }
 
+    VerificationCode.Type requestType = VerificationCode.Type.valueOf(emailVerificationType);
     // user can only request resending email for account registration only when the account is unverified
-    if (!Objects.equals(User.AccountStatus.UNVERIFIED, user.getAccountStatus())) {
+    if (requestType.equals(ACCOUNT_REGISTRATION) && !Objects.equals(User.AccountStatus.UNVERIFIED, user.getAccountStatus())) {
       return ErrorCode.AUTH_ERROR9;
     }
 

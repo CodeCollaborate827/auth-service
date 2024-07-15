@@ -9,8 +9,8 @@ public enum ErrorCode {
   AUTH_ERROR5("Invalid password", 401),
   AUTH_ERROR6("", 401),
 
-  AUTH_ERROR7("Cannot send email", 500),
-  AUTH_ERROR8("Invalid operation, valid types are [\"ACCOUNT_REGISTRATION\", \"FORGOT_PASSWORD\"]", 400),
+  AUTH_ERROR7("Error when sending the email", 500),
+  AUTH_ERROR8("Invalid operation, valid types are ['ACCOUNT_REGISTRATION', 'FORGOT_PASSWORD']", 400),
   AUTH_ERROR9("Invalid operation, user's account was already registered and verified", 400),
   AUTH_ERROR10("Too many requests. Please try later", 400);
 

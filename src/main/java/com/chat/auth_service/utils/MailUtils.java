@@ -2,6 +2,8 @@ package com.chat.auth_service.utils;
 
 import com.chat.auth_service.entity.User;
 import com.chat.auth_service.entity.VerificationCode;
+import com.chat.auth_service.exception.ApplicationException;
+import com.chat.auth_service.exception.ErrorCode;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
@@ -12,6 +14,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.CompletableFuture;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Async;
@@ -19,6 +22,7 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
 @Component
+@Slf4j
 @RequiredArgsConstructor
 public class MailUtils {
   private final JavaMailSender mailSender;
@@ -30,11 +34,10 @@ public class MailUtils {
   private String from;
 
   @Async("mailSenderThreadPoolTaskExecutor")
-  public CompletableFuture<Mono<Void>> sendVerificationEmail(
+  public void sendVerificationEmail(
       String subject, String email, VerificationCode code) {
     // send mail
     MimeMessage message = mailSender.createMimeMessage();
-
     // read this: https://stackoverflow.com/questions/24798695/spring-async-method-inside-a-service
     try {
       message.setFrom(new InternetAddress(from));
@@ -44,11 +47,12 @@ public class MailUtils {
       String htmlTemplate = readFile(verificationMailPath);
 //      htmlTemplate = htmlTemplate.replace("${name}", user.getUsername());
       htmlTemplate = htmlTemplate.replace("${verificationCode}", code.getCode());
-
       message.setContent(htmlTemplate, "text/html; charset=utf-8");
-      return CompletableFuture.completedFuture(Mono.fromRunnable(() -> mailSender.send(message)));
-    } catch (MessagingException | IOException e) {
-      return CompletableFuture.completedFuture(Mono.error(e));
+      log.info("Sending email ...");
+      mailSender.send(message);
+      log.info("Sent email successfull!");
+    } catch (Exception e) {
+      log.error("ERROR when sending the email: {}", e);
     }
   }
 
