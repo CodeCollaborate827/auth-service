@@ -21,7 +21,7 @@ public class RefreshToken {
   private String refreshToken;
   private Integer usageCount;
   private Integer limitUsageCount;
-  private LocalDateTime lastUsed;
+  private OffsetDateTime lastUsed;
   @CreatedDate private OffsetDateTime createdAt;
   @LastModifiedDate private OffsetDateTime updatedAt;
 }

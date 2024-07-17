@@ -16,7 +16,13 @@ public enum ErrorCode {
   AUTH_ERROR10("Too many requests. Please try later", 400),
   AUTH_ERROR11("Cannot process email verification", 500),
   AUTH_ERROR12("Invalid verification code", 400),
-  AUTH_ERROR13("Verification code expired", 400);
+  AUTH_ERROR13("Verification code expired", 400),
+
+  AUTH_ERROR14("Invalid refresh token", 401),
+  AUTH_ERROR15("Refresh token expired", 401),
+  AUTH_ERROR16("Refresh token not found", 404),
+  AUTH_ERROR17("Refresh token reaches limit", 400),
+  AUTH_ERROR18("Refresh token only gets after 5 minutes", 400);
 
   private final String errorMessage;
   private final int httpStatus;

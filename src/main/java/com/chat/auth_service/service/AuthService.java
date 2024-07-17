@@ -14,4 +14,6 @@ public interface AuthService {
 
   Mono<ResponseEntity<VerifyEmailResponse>> verifyEmail(
       Mono<VerifyEmailRequest> verifyEmailRequest);
+
+  Mono<ResponseEntity<RefreshTokenResponse>> refreshToken(Mono<RefreshTokenRequest> refreshTokenRequest);
 }

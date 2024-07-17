@@ -56,4 +56,9 @@ public class AuthApiDelegatorImpl implements AuthApiDelegate {
       Mono<VerifyEmailRequest> verifyEmailRequest, ServerWebExchange exchange) {
     return authService.verifyEmail(verifyEmailRequest);
   }
+
+  @Override
+  public Mono<ResponseEntity<RefreshTokenResponse>> refreshToken(Mono<RefreshTokenRequest> refreshTokenRequest, ServerWebExchange exchange) {
+    return authService.refreshToken(refreshTokenRequest);
+  }
 }

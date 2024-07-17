@@ -219,6 +219,36 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/500InternalError'
+  /auth/refresh-token:
+    post:
+      summary: Refresh token
+      operationId: refreshToken
+      tags:
+        - auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+                  description: Refresh token
+                  example: "eyJhbGciO"
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshTokenResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/500InternalError'
 
 components:
   schemas:
