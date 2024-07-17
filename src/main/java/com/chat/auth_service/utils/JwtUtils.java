@@ -57,7 +57,6 @@ public class JwtUtils {
             loginHistory.getIpAddress());
     return Jwts.builder()
         .claims(claims)
-        .subject(user.getEmail())
         .issuedAt(new Date())
         .expiration(
             new Date(System.currentTimeMillis() + EXPIRATION_TIME_REFRESH_TOKEN * 60 * 60 * 1000))
@@ -101,7 +100,22 @@ public class JwtUtils {
     return Keys.hmacShaKeyFor(keyBytes);
   }
 
-  public static boolean validateToken(String jwt, LoginHistory loginHistory) {
+  public static boolean validateAccessToken(String jwt, LoginHistory loginHistory, User user) {
+    final String userID = extractUserID(jwt);
+    final String userAgent = extractUserAgent(jwt);
+    final String ipAddress = extractIpAddress(jwt);
+    final String email = extractClaim(jwt, Claims::getSubject);
+
+    if (!loginHistory.getUserId().toString().equals(userID) || !loginHistory.getUserAgent().equals(userAgent) || !loginHistory.getIpAddress().equals(ipAddress) || !user.getEmail().equals(email)) {
+      throw new ApplicationException(ErrorCode.AUTH_ERROR14);
+    }
+    else if (isTokenExpired(jwt)) {
+      throw new ApplicationException(ErrorCode.AUTH_ERROR15);
+    }
+    return true;
+  }
+
+  public static boolean validateRefreshToken(String jwt, LoginHistory loginHistory) {
     final String userID = extractUserID(jwt);
     final String userAgent = extractUserAgent(jwt);
     final String ipAddress = extractIpAddress(jwt);
