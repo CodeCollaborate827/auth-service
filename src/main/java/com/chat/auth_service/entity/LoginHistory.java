@@ -20,7 +20,7 @@ public class LoginHistory {
   private String ipAddress;
   private String userAgent;
   private Boolean isSuccessful;
-  private Boolean isSaved;
+  //  private Boolean isSaved;
   @CreatedDate private OffsetDateTime createdAt;
   @LastModifiedDate private OffsetDateTime updatedAt;
 }

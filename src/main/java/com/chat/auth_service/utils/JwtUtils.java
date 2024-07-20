@@ -3,24 +3,27 @@ package com.chat.auth_service.utils;
 import com.chat.auth_service.entity.LoginHistory;
 import com.chat.auth_service.entity.User;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import java.security.Key;
 import java.util.Date;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
+@Component
 public class JwtUtils {
   @Value("${jwt.secret-key}")
-  private static String SECRET_KEY;
+  private String SECRET_KEY;
 
   @Value("${jwt.expiration-time-access-token}")
-  private static Long EXPIRATION_TIME_ACCESS_TOKEN;
+  private String EXPIRATION_TIME_ACCESS_TOKEN;
 
   @Value("${jwt.expiration-time-refresh-token}")
-  private static Long EXPIRATION_TIME_REFRESH_TOKEN;
+  private String EXPIRATION_TIME_REFRESH_TOKEN;
 
-  public static String generateAccessToken(User user, LoginHistory loginHistory) {
+  public String generateAccessToken(User user, LoginHistory loginHistory) {
 
     Map<String, String> claims =
         Map.of(
@@ -34,12 +37,12 @@ public class JwtUtils {
         .claims(claims)
         .subject(user.getEmail())
         .issuedAt(new Date())
-        .expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME_ACCESS_TOKEN * 60 * 1000))
-        .signWith(getSigningKey(), Jwts.SIG.NONE)
+        .expiration(new Date(System.currentTimeMillis() + Long.parseLong(EXPIRATION_TIME_ACCESS_TOKEN) * 60 * 1000))
+        .signWith(getSigningKey(), SignatureAlgorithm.HS256)
         .compact();
   }
 
-  public static String generateRefreshToken(User user, LoginHistory loginHistory) {
+  public String generateRefreshToken(User user, LoginHistory loginHistory) {
     Map<String, String> claims =
         Map.of(
             "user_id",
@@ -53,12 +56,12 @@ public class JwtUtils {
         .subject(user.getEmail())
         .issuedAt(new Date())
         .expiration(
-            new Date(System.currentTimeMillis() + EXPIRATION_TIME_REFRESH_TOKEN * 60 * 60 * 1000))
-        .signWith(getSigningKey(), Jwts.SIG.NONE)
+            new Date(System.currentTimeMillis() + Long.parseLong(EXPIRATION_TIME_REFRESH_TOKEN) * 60 * 60 * 1000))
+        .signWith(getSigningKey(), SignatureAlgorithm.HS256)
         .compact();
   }
 
-  private static Key getSigningKey() {
+  private Key getSigningKey() {
     byte[] keyBytes = Decoders.BASE64.decode(SECRET_KEY);
     return Keys.hmacShaKeyFor(keyBytes);
   }
