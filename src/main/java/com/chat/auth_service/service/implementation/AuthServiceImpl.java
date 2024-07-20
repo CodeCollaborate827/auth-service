@@ -126,68 +126,84 @@ public class AuthServiceImpl implements AuthService {
 
   @Override
   public Mono<ResponseEntity<Register200Response>> register(Mono<RegisterRequest> registerRequest) {
+    // TODO: refactor code, move the util methods to Utils class
     return registerRequest.flatMap(
         request -> {
           // Check if email is already registered
-          return userRepository
-              .findByEmail(request.getEmail())
-              .flatMap(existingUser -> Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR6)))
-              .then(Mono.defer(() -> userRepository.findByUsername(request.getUsername())))
+          return createNewUserFromRequest(request)
+              .flatMap(userRepository::save)
               .flatMap(
-                  existingUser ->
-                      Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR4))
-                          .then(
-                              Mono.defer(
-                                  () -> {
-                                    // Create user
-                                    User newUser = new User();
-                                    newUser.setEmail(request.getEmail());
-                                    newUser.setUsername(request.getUsername());
-                                    newUser.setPasswordHash(
-                                        passwordEncoder.encode(request.getPassword()));
-                                    newUser.setAccountType(User.AccountType.NORMAL);
-                                    newUser.setAccountStatus(
-                                        User.AccountStatus
-                                            .UNVERIFIED); // Set to INACTIVE until email is verified
-
-                                    // Create authentication setting
-                                    AuthenticationSetting authSetting = new AuthenticationSetting();
-                                    authSetting.setUserId(newUser.getId());
-                                    authSetting.setMfaEnabled(
-                                        false); // Default to false, can be enabled later
-
-                                    // Generate email verification code
-                                    VerificationCode verificationCode = new VerificationCode();
-                                    verificationCode.setUserId(newUser.getId());
-                                    verificationCode.setType(ACCOUNT_REGISTRATION);
-                                    verificationCode.setCode(
-                                        generateVerificationCode()); // Implement this method
-                                    verificationCode.setExpiration(
-                                        OffsetDateTime.now().plusHours(24)); // 24 hours validity
-
-                                    return Mono.zip(
-                                            userRepository.save(newUser),
-                                            authenticationSettingRepository.save(authSetting),
-                                            verificationCodeRepository.save(verificationCode))
-                                        .flatMap(
-                                            tuple -> {
-                                              User savedUser = tuple.getT1();
-                                              VerificationCode savedCode = tuple.getT3();
-                                              // Send verification
-
-                                              mailUtils.sendVerificationEmail(
-                                                  "Verify email", savedUser.getEmail(), savedCode);
-                                              return Mono.just(savedUser);
-                                            });
-                                  }))
-                          .map(
-                              savedUser -> {
-                                Register200Response response = new Register200Response();
-                                response.setMessage(
-                                    "Registration successful. Please check your email to verify your account.");
-                                return ResponseEntity.ok(response);
-                              }));
+                  savedUser -> {
+                    AuthenticationSetting authenticationSetting =
+                        createAuthenticationSetting(savedUser);
+                    VerificationCode verificationCode = createVerificationCode(savedUser);
+                    return authenticationSettingRepository
+                        .save(authenticationSetting)
+                        .then(verificationCodeRepository.save(verificationCode))
+                        .doOnNext(
+                            savedVerificationCode ->
+                                mailUtils.sendVerificationEmail(
+                                    "Verify email", savedUser.getEmail(), savedVerificationCode))
+                        .then(Mono.just(savedUser));
+                  })
+              .map(
+                  savedUser -> {
+                    Register200Response response = new Register200Response();
+                    response.setMessage(
+                        "Registration successful. Please check your email to verify your account.");
+                    return ResponseEntity.ok(response);
+                  });
         });
+  }
+
+  private Mono<User> createNewUserFromRequest(RegisterRequest request) {
+    return Mono.zip(
+            userRepository.existsByEmail(request.getEmail()),
+            userRepository.existsByUsername(request.getUsername()))
+        .flatMap(
+            tuple2 -> {
+              Boolean existedByEmail = tuple2.getT1();
+              Boolean existedByUsername = tuple2.getT2();
+
+              if (existedByEmail) {
+                return Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR2));
+              }
+
+              if (existedByUsername) {
+                return Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR4));
+              }
+              User newUser = createNewUser(request);
+              return Mono.just(newUser);
+            });
+  }
+
+  private User createNewUser(RegisterRequest request) {
+    User newUser = new User();
+    newUser.setEmail(request.getEmail());
+    newUser.setUsername(request.getUsername());
+    newUser.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+    newUser.setAccountType(User.AccountType.NORMAL);
+    newUser.setAccountStatus(
+        User.AccountStatus.UNVERIFIED); // Set to INACTIVE until email is verified
+
+    return newUser;
+  }
+
+  private VerificationCode createVerificationCode(User user) {
+    VerificationCode verificationCode = new VerificationCode();
+    verificationCode.setUserId(user.getId());
+    verificationCode.setType(ACCOUNT_REGISTRATION);
+    verificationCode.setCode(generateVerificationCode()); // Implement this method
+    verificationCode.setExpiration(OffsetDateTime.now().plusHours(24)); // 24 hours validity
+
+    return verificationCode;
+  }
+
+  private AuthenticationSetting createAuthenticationSetting(User user) {
+    AuthenticationSetting authSetting = new AuthenticationSetting();
+    authSetting.setUserId(user.getId());
+    authSetting.setMfaEnabled(false); // Default to false, can be enabled later
+    return authSetting;
   }
 
   @Override

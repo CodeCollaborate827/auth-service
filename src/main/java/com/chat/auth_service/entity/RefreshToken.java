@@ -12,7 +12,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.relational.core.mapping.Table;
 
 @Data
-@Table(name = "refresh_token")
+@Table(name = "refresh_tokens")
 @NoArgsConstructor
 @AllArgsConstructor
 public class RefreshToken {
