@@ -1,0 +1,1 @@
+ALTER TABLE refresh_tokens ALTER COLUMN refresh_token TYPE TEXT;
