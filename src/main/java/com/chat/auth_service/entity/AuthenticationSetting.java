@@ -11,7 +11,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.relational.core.mapping.Table;
 
 @Data
-@Table(name = "authentication_setting")
+@Table(name = "authentication_settings")
 @NoArgsConstructor
 @AllArgsConstructor
 public class AuthenticationSetting {

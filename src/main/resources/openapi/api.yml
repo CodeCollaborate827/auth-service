@@ -301,11 +301,11 @@ components:
           type: string
           description: User password
           example: "password"
-        ip_address:
+        ipAddress:
           type: string
           description: User IP address
           example: "123.123.123.123"
-        user_agent:
+        userAgent:
           type: string
           description: User agent
           example: "Mozilla/5.0"

@@ -2,7 +2,7 @@ package com.chat.auth_service.exception;
 
 public enum ErrorCode {
   AUTH_ERROR1("User not found", 404),
-  AUTH_ERROR2("User already exists", 409),
+  AUTH_ERROR2("User email already exists", 409),
   AUTH_ERROR3("User not verified", 401),
   AUTH_ERROR4("Username already taken", 409),
 

@@ -11,12 +11,12 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.relational.core.mapping.Table;
 
 @Data
-@Table(name = "refresh_token")
+@Table(name = "refresh_tokens")
 @NoArgsConstructor
 @AllArgsConstructor
 public class RefreshToken {
   @Id private UUID id;
-  private UUID loginId;
+  private UUID loginHistoryId;
   private String refreshToken;
   private Integer usageCount;
   private Integer limitUsageCount;
