@@ -8,5 +8,5 @@ import reactor.core.publisher.Mono;
 
 @Repository
 public interface RefreshTokenRepository extends R2dbcRepository<RefreshToken, UUID> {
-    Mono<RefreshToken> findByRefreshToken(String refreshToken);
+  Mono<RefreshToken> findByRefreshToken(String refreshToken);
 }

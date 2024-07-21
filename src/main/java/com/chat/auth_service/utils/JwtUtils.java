@@ -8,14 +8,11 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import java.security.Key;
 import java.util.Date;
 import java.util.Map;
 import java.util.function.Function;
-
-import org.springframework.beans.factory.annotation.Value;
-
 import javax.crypto.SecretKey;
+import org.springframework.beans.factory.annotation.Value;
 
 public class JwtUtils {
   @Value("${jwt.secret-key}")
@@ -83,16 +80,10 @@ public class JwtUtils {
 
   private static Claims extractAllClaims(String jwt) {
     try {
-      return Jwts
-              .parser()
-              .verifyWith(getSigningKey())
-              .build()
-              .parseSignedClaims(jwt)
-              .getPayload();
+      return Jwts.parser().verifyWith(getSigningKey()).build().parseSignedClaims(jwt).getPayload();
     } catch (Exception e) {
       throw new ApplicationException(ErrorCode.AUTH_ERROR14);
     }
-
   }
 
   private static SecretKey getSigningKey() {
@@ -106,10 +97,12 @@ public class JwtUtils {
     final String ipAddress = extractIpAddress(jwt);
     final String email = extractClaim(jwt, Claims::getSubject);
 
-    if (!loginHistory.getUserId().toString().equals(userID) || !loginHistory.getUserAgent().equals(userAgent) || !loginHistory.getIpAddress().equals(ipAddress) || !user.getEmail().equals(email)) {
+    if (!loginHistory.getUserId().toString().equals(userID)
+        || !loginHistory.getUserAgent().equals(userAgent)
+        || !loginHistory.getIpAddress().equals(ipAddress)
+        || !user.getEmail().equals(email)) {
       throw new ApplicationException(ErrorCode.AUTH_ERROR14);
-    }
-    else if (isTokenExpired(jwt)) {
+    } else if (isTokenExpired(jwt)) {
       throw new ApplicationException(ErrorCode.AUTH_ERROR15);
     }
     return true;
@@ -120,10 +113,11 @@ public class JwtUtils {
     final String userAgent = extractUserAgent(jwt);
     final String ipAddress = extractIpAddress(jwt);
 
-    if (!loginHistory.getUserId().toString().equals(userID) || !loginHistory.getUserAgent().equals(userAgent) || !loginHistory.getIpAddress().equals(ipAddress)) {
+    if (!loginHistory.getUserId().toString().equals(userID)
+        || !loginHistory.getUserAgent().equals(userAgent)
+        || !loginHistory.getIpAddress().equals(ipAddress)) {
       throw new ApplicationException(ErrorCode.AUTH_ERROR14);
-    }
-    else if (isTokenExpired(jwt)) {
+    } else if (isTokenExpired(jwt)) {
       throw new ApplicationException(ErrorCode.AUTH_ERROR15);
     }
     return true;

@@ -58,7 +58,8 @@ public class AuthApiDelegatorImpl implements AuthApiDelegate {
   }
 
   @Override
-  public Mono<ResponseEntity<RefreshTokenResponse>> refreshToken(Mono<RefreshTokenRequest> refreshTokenRequest, ServerWebExchange exchange) {
+  public Mono<ResponseEntity<RefreshTokenResponse>> refreshToken(
+      Mono<RefreshTokenRequest> refreshTokenRequest, ServerWebExchange exchange) {
     return authService.refreshToken(refreshTokenRequest);
   }
 }
