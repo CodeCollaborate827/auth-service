@@ -19,6 +19,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -37,6 +38,9 @@ public class AuthServiceImpl implements AuthService {
   private final VerificationCodeRepository verificationCodeRepository;
   private final MailUtils mailUtils;
   private final JwtUtils jwtUtils;
+
+  @Value("${jwt.limit-refresh-token-usage-consecutive-minutes}")
+    private int LIMIT_REFRESH_TOKEN_USAGE_CONSECUTIVE_MINUTES;
 
   private final String ACCESS_TOKEN_KEY = "accessToken";
   private final String REFRESH_TOKEN_KEY = "refreshToken";
@@ -116,16 +120,16 @@ public class AuthServiceImpl implements AuthService {
     return loginHistory;
   }
 
-    private Mono<RefreshToken> saveRefreshToken(User user, LoginHistory loginHistory) {
-        RefreshToken refreshToken = new RefreshToken();
-        refreshToken.setLoginHistoryId(loginHistory.getId());
-        refreshToken.setRefreshToken(jwtUtils.generateRefreshToken(user, loginHistory));
-        refreshToken.setUsageCount(1);
-        refreshToken.setLimitUsageCount(5);
-        refreshToken.setLastUsed(OffsetDateTime.now());
+  private Mono<RefreshToken> saveRefreshToken(User user, LoginHistory loginHistory) {
+    RefreshToken refreshToken = new RefreshToken();
+    refreshToken.setLoginHistoryId(loginHistory.getId());
+    refreshToken.setRefreshToken(jwtUtils.generateRefreshToken(user, loginHistory));
+    refreshToken.setUsageCount(1);
+    refreshToken.setLimitUsageCount(5);
+    refreshToken.setLastUsed(OffsetDateTime.now());
 
-        return refreshTokenRepository.save(refreshToken);
-    }
+    return refreshTokenRepository.save(refreshToken);
+  }
 
   @Override
   public Mono<ResponseEntity<Register200Response>> register(Mono<RegisterRequest> registerRequest) {
@@ -308,76 +312,80 @@ public class AuthServiceImpl implements AuthService {
   @Override
   public Mono<ResponseEntity<RefreshTokenResponse>> refreshToken(
       Mono<RefreshTokenRequest> refreshTokenRequest) {
-      return refreshTokenRequest.flatMap(
-              request -> refreshTokenRepository
-                      .findByRefreshToken(request.getRefreshToken())
-                      .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR16)))
-                      .zipWhen(this::checkIfRefreshTokenAvailableToGenerate)
-                      .flatMap(tuple2 -> generateAccessTokenAndSaveRefreshToken(tuple2.getT1(), tuple2.getT2())
-                      .map(accessToken -> {
-                            RefreshTokenResponse response = new RefreshTokenResponse();
-                            response.setRefreshToken(request.getRefreshToken());
-                            response.setAccessToken(accessToken);
-                            return ResponseEntity.ok(response);
-                      }))
-      );
+    return refreshTokenRequest.flatMap(
+        request ->
+            refreshTokenRepository
+                .findByRefreshToken(request.getRefreshToken())
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR16)))
+                .zipWhen(this::checkIfRefreshTokenAvailableToGenerate)
+                .flatMap(
+                    tuple2 ->
+                        generateAccessTokenAndSaveRefreshToken(tuple2.getT1(), tuple2.getT2())
+                            .map(
+                                accessToken -> {
+                                  RefreshTokenResponse response = new RefreshTokenResponse();
+                                  response.setRefreshToken(request.getRefreshToken());
+                                  response.setAccessToken(accessToken);
+                                  return ResponseEntity.ok(response);
+                                })));
   }
 
-    private Mono<String> generateAccessTokenAndSaveRefreshToken(RefreshToken refreshToken, LoginHistory loginHistory) {
-      return userRepository
-              .findById(loginHistory.getUserId())
-              .flatMap(
-                      user -> {
-                          // generate new access token
-                          String accessToken =
-                                  JwtUtils.generateAccessToken(user, loginHistory);
+  private Mono<String> generateAccessTokenAndSaveRefreshToken(
+      RefreshToken refreshToken, LoginHistory loginHistory) {
+    return userRepository
+        .findById(loginHistory.getUserId())
+        .flatMap(
+            user -> {
+              // generate new access token
+              String accessToken = jwtUtils.generateAccessToken(user, loginHistory);
 
-                          // update the refresh token
-                          refreshToken.setUsageCount(
-                                  refreshToken.getUsageCount() + 1);
-                          refreshToken.setLastUsed(OffsetDateTime.now());
+              // update the refresh token
+              refreshToken.setUsageCount(refreshToken.getUsageCount() + 1);
+              refreshToken.setLastUsed(OffsetDateTime.now());
 
-                          return refreshTokenRepository
-                                  .save(refreshToken)
-                                  .map(
-                                          savedRefreshToken -> {
-                                              return accessToken;
-                                          });
+              return refreshTokenRepository
+                  .save(refreshToken)
+                  .map(
+                      savedRefreshToken -> {
+                        return accessToken;
                       });
+            });
+  }
+
+  private Mono<LoginHistory> checkIfRefreshTokenAvailableToGenerate(RefreshToken refreshToken) {
+    return loginHistoryRepository
+        .findById(refreshToken.getLoginHistoryId())
+        .flatMap(loginHistory -> validateRefreshToken(refreshToken, loginHistory))
+        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR16)));
+  }
+
+  private Mono<LoginHistory> validateRefreshToken(
+      RefreshToken refreshToken, LoginHistory loginHistory) {
+    if (!jwtUtils.validateRefreshToken(refreshToken.getRefreshToken(), loginHistory)) {
+      return Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR15));
     }
 
-    private Mono<LoginHistory> checkIfRefreshTokenAvailableToGenerate(RefreshToken refreshToken) {
-        return loginHistoryRepository.findById(refreshToken.getLoginId())
-                .flatMap(loginHistory -> validateRefreshToken(refreshToken, loginHistory))
-                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR16)));
+    if (isUsageCountExceeded(refreshToken)) {
+      return Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR17));
     }
 
-    private Mono<LoginHistory> validateRefreshToken(RefreshToken refreshToken, LoginHistory loginHistory) {
-        if (!JwtUtils.validateRefreshToken(refreshToken.getRefreshToken(), loginHistory)) {
-            return Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR15));
-        }
-
-        if (isUsageCountExceeded(refreshToken)) {
-            return Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR17));
-        }
-
-        if (isUsedTooRecently(refreshToken)) {
-            return Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR18));
-        }
-
-        return Mono.just(loginHistory);
+    if (isUsedTooRecently(refreshToken)) {
+      return Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR18));
     }
 
-    private boolean isUsageCountExceeded(RefreshToken refreshToken) {
-        return refreshToken.getUsageCount() >= refreshToken.getLimitUsageCount();
-    }
+    return Mono.just(loginHistory);
+  }
 
-    private boolean isUsedTooRecently(RefreshToken refreshToken) {
-        Duration timeSinceLastUse = Duration.between(refreshToken.getLastUsed(), OffsetDateTime.now());
-        return timeSinceLastUse.toMinutes() < 5;
-    }
+  private boolean isUsageCountExceeded(RefreshToken refreshToken) {
+    return refreshToken.getUsageCount() >= refreshToken.getLimitUsageCount();
+  }
 
-    private Mono<VerifyEmailResponse> handleVerifyEmailForRegistration(
+  private boolean isUsedTooRecently(RefreshToken refreshToken) {
+    Duration timeSinceLastUse = Duration.between(refreshToken.getLastUsed(), OffsetDateTime.now());
+    return timeSinceLastUse.toMinutes() < LIMIT_REFRESH_TOKEN_USAGE_CONSECUTIVE_MINUTES;
+  }
+
+  private Mono<VerifyEmailResponse> handleVerifyEmailForRegistration(
       VerifyEmailRequest request, User user) {
     return verificationCodeRepository
         .findByUserEmailAndCodeAndTypeLatest(
