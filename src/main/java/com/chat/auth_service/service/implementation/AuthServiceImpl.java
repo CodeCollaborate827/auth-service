@@ -66,8 +66,6 @@ public class AuthServiceImpl implements AuthService {
                                               Mono.just(
                                                   ResponseEntity.ok(
                                                       new Login200Response()
-                                                          .refreshToken(
-                                                              refreshToken.getRefreshToken())
                                                           .accessToken(accessToken))));
                                 })));
   }
@@ -324,7 +322,6 @@ public class AuthServiceImpl implements AuthService {
                             .map(
                                 accessToken -> {
                                   RefreshTokenResponse response = new RefreshTokenResponse();
-                                  response.setRefreshToken(request.getRefreshToken());
                                   response.setAccessToken(accessToken);
                                   return ResponseEntity.ok(response);
                                 })));

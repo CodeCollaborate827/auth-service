@@ -401,7 +401,3 @@ components:
           type: string
           description: New access token
           example: "eyJhbGciO"
-        refreshToken:
-          type: string
-          description: New refresh token
-          example: "eyJhbGciO"
