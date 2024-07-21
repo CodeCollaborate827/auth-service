@@ -40,7 +40,7 @@ public class AuthServiceImpl implements AuthService {
   private final JwtUtils jwtUtils;
 
   @Value("${jwt.limit-refresh-token-usage-consecutive-minutes}")
-    private int LIMIT_REFRESH_TOKEN_USAGE_CONSECUTIVE_MINUTES;
+  private int LIMIT_REFRESH_TOKEN_USAGE_CONSECUTIVE_MINUTES;
 
   private final String ACCESS_TOKEN_KEY = "accessToken";
   private final String REFRESH_TOKEN_KEY = "refreshToken";
