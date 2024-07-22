@@ -3,6 +3,7 @@ package com.chat.auth_service.delegator;
 import com.chat.auth_service.server.api.AuthApiDelegate;
 import com.chat.auth_service.server.model.*;
 import com.chat.auth_service.service.AuthService;
+import com.chat.auth_service.service.MailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -13,11 +14,14 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class AuthApiDelegatorImpl implements AuthApiDelegate {
   private final AuthService authService;
+  private final MailService mailService;
+
+  // TODO: forgot password endpoint, reset password endpoint, change password endpoint
 
   @Override
   public Mono<ResponseEntity<ForgotPassword200Response>> forgotPassword(
-      ServerWebExchange exchange) {
-    return AuthApiDelegate.super.forgotPassword(exchange);
+      Mono<ForgotPasswordRequest> forgotPasswordRequest, ServerWebExchange exchange) {
+    return authService.forgotPassword(forgotPasswordRequest);
   }
 
   @Override
@@ -48,13 +52,13 @@ public class AuthApiDelegatorImpl implements AuthApiDelegate {
   public Mono<ResponseEntity<CommonResponse>> resendVerificationEmail(
       Mono<ResendVerificationEmailRequest> resendVerificationEmailRequest,
       ServerWebExchange exchange) {
-    return authService.rendSendVerificationEmail(resendVerificationEmailRequest);
+    return mailService.rendSendVerificationEmail(resendVerificationEmailRequest);
   }
 
   @Override
   public Mono<ResponseEntity<VerifyEmailResponse>> verifyEmail(
       Mono<VerifyEmailRequest> verifyEmailRequest, ServerWebExchange exchange) {
-    return authService.verifyEmail(verifyEmailRequest);
+    return mailService.verifyEmail(verifyEmailRequest);
   }
 
   @Override

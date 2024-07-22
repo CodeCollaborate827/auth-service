@@ -16,7 +16,7 @@ import org.springframework.data.relational.core.mapping.Table;
 @AllArgsConstructor
 public class VerificationCode {
   @Id private UUID id;
-  private UUID userId;
+  private String userEmail;
   private OffsetDateTime expiration;
   private Type type;
   private String code;

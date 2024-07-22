@@ -11,16 +11,21 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.relational.core.mapping.Table;
 
 @Data
-@Table(name = "refresh_tokens")
+@Table(name = "application_tokens")
 @NoArgsConstructor
 @AllArgsConstructor
-public class RefreshToken {
+public class ApplicationToken {
   @Id private UUID id;
-  private UUID loginHistoryId;
-  private String refreshToken;
+  private String token;
+  private TokenType tokenType;
   private Integer usageCount;
   private Integer limitUsageCount;
   private OffsetDateTime lastUsed;
   @CreatedDate private OffsetDateTime createdAt;
   @LastModifiedDate private OffsetDateTime updatedAt;
+
+  public enum TokenType {
+    REFRESH_TOKEN,
+    RESET_PASSWORD_TOKEN
+  }
 }

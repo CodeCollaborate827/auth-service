@@ -27,16 +27,19 @@ public class JwtUtils {
   @Value("${jwt.expiration-time-refresh-token}")
   private String EXPIRATION_TIME_REFRESH_TOKEN;
 
-  public String generateAccessToken(User user, LoginHistory loginHistory) {
+  private final String USER_AGENT = "USER_AGENT";
+  private final String IP_ADDRESS = "IP_ADDRESS";
+
+  public String generateAccessToken(User user) {
 
     Map<String, String> claims =
         Map.of(
             "user_id",
             Utils.convertUUIDToString(user.getId()),
             "user_agent",
-            loginHistory.getUserAgent(),
+            USER_AGENT,
             "ip_address",
-            loginHistory.getIpAddress());
+            IP_ADDRESS);
     return Jwts.builder()
         .claims(claims)
         .subject(user.getEmail())
@@ -49,15 +52,15 @@ public class JwtUtils {
         .compact();
   }
 
-  public String generateRefreshToken(User user, LoginHistory loginHistory) {
+  public String generateRefreshToken(User user) {
     Map<String, String> claims =
         Map.of(
             "user_id",
             Utils.convertUUIDToString(user.getId()),
             "user_agent",
-            loginHistory.getUserAgent(),
+            USER_AGENT,
             "ip_address",
-            loginHistory.getIpAddress());
+            IP_ADDRESS);
     return Jwts.builder()
         .claims(claims)
         .subject(user.getEmail())
@@ -67,6 +70,29 @@ public class JwtUtils {
                 System.currentTimeMillis()
                     + Long.parseLong(EXPIRATION_TIME_REFRESH_TOKEN) * 60 * 60 * 1000))
         .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+        .compact();
+  }
+
+  public String generateResetPasswordToken(User user) {
+    Map<String, String> claims =
+        Map.of(
+            "user_id",
+            Utils.convertUUIDToString(user.getId()),
+            "user_agent",
+            USER_AGENT,
+            "ip_address",
+            IP_ADDRESS);
+    return Jwts.builder()
+        .claims(claims)
+        .subject(user.getEmail())
+        .issuedAt(new Date())
+        .expiration(
+            new Date(
+                System.currentTimeMillis()
+                    + Long.parseLong(EXPIRATION_TIME_REFRESH_TOKEN) * 60 * 60 * 1000))
+        // TODO: this should be JWE
+
+        .signWith(getSigningKey())
         .compact();
   }
 
@@ -117,18 +143,20 @@ public class JwtUtils {
     return true;
   }
 
-  public boolean validateRefreshToken(String jwt, LoginHistory loginHistory) {
+  public boolean validateRefreshToken(String jwt) {
     final String userID = extractUserID(jwt);
     final String userAgent = extractUserAgent(jwt);
     final String ipAddress = extractIpAddress(jwt);
 
-    if (!loginHistory.getUserId().toString().equals(userID)
-        || !loginHistory.getUserAgent().equals(userAgent)
-        || !loginHistory.getIpAddress().equals(ipAddress)) {
-      throw new ApplicationException(ErrorCode.AUTH_ERROR14);
-    } else if (isTokenExpired(jwt)) {
-      throw new ApplicationException(ErrorCode.AUTH_ERROR15);
-    }
+    // TODO: get the userId and userAgent in the header
+
+    //    if (!loginHistory.getUserId().toString().equals(userID)
+    //        || !loginHistory.getUserAgent().equals(userAgent)
+    //        || !loginHistory.getIpAddress().equals(ipAddress)) {
+    //      throw new ApplicationException(ErrorCode.AUTH_ERROR14);
+    //    } else if (isTokenExpired(jwt)) {
+    //      throw new ApplicationException(ErrorCode.AUTH_ERROR15);
+    //    }
     return true;
   }
 

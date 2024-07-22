@@ -167,6 +167,11 @@ paths:
       operationId: forgotPassword
       tags:
         - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequest'
       responses:
         '200':
           description: Password reset link sent successfully
@@ -345,6 +350,13 @@ components:
         tokens:
           type: object
           description: Tokens that can be used for later usage
+    ForgotPasswordRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          description: user email
+          example: "john.doe@gmail.com"
     ResetPasswordRequest:
       type: object
       properties:
