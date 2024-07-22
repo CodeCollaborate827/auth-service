@@ -86,10 +86,7 @@ public class JwtUtils {
         .claims(claims)
         .subject(user.getEmail())
         .issuedAt(new Date())
-        .expiration(
-            new Date(
-                System.currentTimeMillis()
-                    + Long.parseLong(EXPIRATION_TIME_REFRESH_TOKEN) * 60 * 60 * 1000))
+        .expiration(new Date(System.currentTimeMillis() + 30 * 60 * 1000))
         // TODO: this should be JWE
 
         .signWith(getSigningKey())
@@ -126,6 +123,10 @@ public class JwtUtils {
     }
   }
 
+  public String extractUserEmail(String jwt) {
+    return extractAllClaims(jwt).getSubject();
+  }
+
   public boolean validateAccessToken(String jwt, LoginHistory loginHistory, User user) {
     final String userID = extractUserID(jwt);
     final String userAgent = extractUserAgent(jwt);
@@ -160,7 +161,7 @@ public class JwtUtils {
     return true;
   }
 
-  private boolean isTokenExpired(String jwt) {
+  public boolean isTokenExpired(String jwt) {
     return extractExpiration(jwt).before(new Date());
   }
 

@@ -25,7 +25,7 @@ public class AuthApiDelegatorImpl implements AuthApiDelegate {
   }
 
   @Override
-  public Mono<ResponseEntity<Login200Response>> login(
+  public Mono<ResponseEntity<LoginResponse>> login(
       Mono<LoginRequest> loginRequest, ServerWebExchange exchange) {
     return authService.login(loginRequest);
   }
@@ -45,7 +45,7 @@ public class AuthApiDelegatorImpl implements AuthApiDelegate {
   @Override
   public Mono<ResponseEntity<ResetPassword200Response>> resetPassword(
       Mono<ResetPasswordRequest> resetPasswordRequest, ServerWebExchange exchange) {
-    return AuthApiDelegate.super.resetPassword(resetPasswordRequest, exchange);
+    return authService.resetPassword(resetPasswordRequest);
   }
 
   @Override

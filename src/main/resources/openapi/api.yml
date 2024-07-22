@@ -60,14 +60,8 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/RefreshTokenResponse'
-                  - type: object
-                    properties:
-                      message:
-                        type: string
-                        description: Custom success message
-                        example: "Login successful"
+                $ref: '#/components/schemas/LoginResponse'
+
         '500':
           description: Internal Server Error
           content:
@@ -360,14 +354,10 @@ components:
     ResetPasswordRequest:
       type: object
       properties:
-        email:
+        resetPasswordToken:
           type: string
-          description: User email
-          example: "john.doe@gmail.com"
-        oldPassword:
-          type: string
-          description: User old password
-          example: "oldPassword"
+          description: Token used for reset password
+          example: "eyJhbGciOiJIUzM4NCJ9.eyJpcF9hZGRyZXNzIjoiSVBfQUREUkVTUyIsInVzZXJfYWdlbnQiOiJVU0VSX0FHRU5UIiwidXNlcl9pZCI6ImMzN2RiMzBkLWU2N2UtNDJmZC05NDYxLWZiMjY0ZThhYjI2OCIsInN1YiI6ImZvcmV4YW1zMjVAZ21haWwuY29tIiwiaWF0IjoxNzIxNjE0NTMzLCJleHAiOjE3MjE2NTc3MzN9.tCedlChMKbt6S8DcacMZfNiML2zSmK-yCkR2sUpN6a1znDzfvTwu0NgUMeADEPvd"
         newPassword:
           type: string
           description: User new password
@@ -412,4 +402,16 @@ components:
         accessToken:
           type: string
           description: New access token
+          example: "eyJhbGciO"
+
+    LoginResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          description: Access token
+          example: "eyJhbGciO"
+        refreshToken:
+          type: string
+          description: Refresh token
           example: "eyJhbGciO"

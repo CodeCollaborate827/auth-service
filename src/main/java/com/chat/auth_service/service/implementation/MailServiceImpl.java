@@ -2,6 +2,7 @@ package com.chat.auth_service.service.implementation;
 
 import static com.chat.auth_service.entity.VerificationCode.Type.*;
 
+import com.chat.auth_service.entity.ApplicationToken;
 import com.chat.auth_service.entity.LoginHistory;
 import com.chat.auth_service.entity.User;
 import com.chat.auth_service.entity.VerificationCode;
@@ -241,13 +242,15 @@ public class MailServiceImpl implements MailService {
                 return Mono.error(new ApplicationException(errorCode));
               }
 
-              String resetPasswordToken = jwtUtils.generateResetPasswordToken(user);
+              ApplicationToken resetPasswordToken =
+                  createResetPasswordToken(jwtUtils.generateResetPasswordToken(user));
 
-              return Mono.just(resetPasswordToken);
+              return applicationTokenRepository.save(resetPasswordToken);
             })
         .map(
             resetPasswordToken -> {
-              Map<String, String> tokenMap = Map.of(RESET_PASSWORD_TOKEN_KEY, resetPasswordToken);
+              Map<String, String> tokenMap =
+                  Map.of(RESET_PASSWORD_TOKEN_KEY, resetPasswordToken.getToken());
 
               VerifyEmailResponse response = new VerifyEmailResponse();
               response.setType(FORGOT_PASSWORD.toString());
@@ -255,6 +258,17 @@ public class MailServiceImpl implements MailService {
               response.setMessage("Email verified successfully!");
               return response;
             });
+  }
+
+  private ApplicationToken createResetPasswordToken(String token) {
+    ApplicationToken resetPasswordToken = new ApplicationToken();
+    resetPasswordToken.setToken(token);
+    resetPasswordToken.setTokenType(ApplicationToken.TokenType.RESET_PASSWORD_TOKEN);
+    resetPasswordToken.setUsageCount(0); // TODO: move this to application.properties
+    resetPasswordToken.setLimitUsageCount(1); // TODO: move this to application.properties
+    resetPasswordToken.setLastUsed(OffsetDateTime.now());
+
+    return resetPasswordToken;
   }
 
   private ErrorCode validateVerificationCode(

@@ -29,7 +29,7 @@ public class AuthServiceImpl implements AuthService {
   private final AuthenticationSettingRepository authenticationSettingRepository;
   private final LoginHistoryRepository loginHistoryRepository;
   private final PasswordEncoder passwordEncoder;
-  private final ApplicationTokenRepository refreshTokenRepository;
+  private final ApplicationTokenRepository applicationTokenRepository;
   private final MailServiceImpl mailService;
   private final JwtUtils jwtUtils;
 
@@ -39,7 +39,7 @@ public class AuthServiceImpl implements AuthService {
   private final VerificationCodeRepository verificationCodeRepository;
 
   @Override
-  public Mono<ResponseEntity<Login200Response>> login(Mono<LoginRequest> loginRequest) {
+  public Mono<ResponseEntity<LoginResponse>> login(Mono<LoginRequest> loginRequest) {
     return loginRequest.flatMap(
         request ->
             userRepository
@@ -47,18 +47,22 @@ public class AuthServiceImpl implements AuthService {
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR1)))
                 .flatMap(
                     user ->
-                        validateAndSaveLoginHistoryRequest(request, user)
+                        validateAndSaveLoginHistoryRequest(
+                                request, user) // TODO: refactor this, re-design the login flow
                             .flatMap(
                                 history -> {
                                   // Generate and save refresh token
                                   String accessToken = jwtUtils.generateAccessToken(user);
                                   return saveRefreshToken(user)
                                       .flatMap(
-                                          refreshToken ->
-                                              Mono.just(
-                                                  ResponseEntity.ok(
-                                                      new Login200Response()
-                                                          .accessToken(accessToken))));
+                                          savedRefreshToken -> {
+                                            LoginResponse loginResponse = new LoginResponse();
+                                            loginResponse.setAccessToken(accessToken);
+                                            loginResponse.setRefreshToken(
+                                                savedRefreshToken.getToken());
+
+                                            return Mono.just(ResponseEntity.ok(loginResponse));
+                                          });
                                 })));
   }
 
@@ -67,7 +71,7 @@ public class AuthServiceImpl implements AuthService {
       Mono<RefreshTokenRequest> refreshTokenRequest) {
     return refreshTokenRequest.flatMap(
         request ->
-            refreshTokenRepository
+            applicationTokenRepository
                 .findByToken(request.getRefreshToken())
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR16)))
                 .flatMap(this::validateRefreshTokenAndGenerateNewAccessToken)
@@ -109,6 +113,62 @@ public class AuthServiceImpl implements AuthService {
                     return ResponseEntity.ok(response);
                   });
         });
+  }
+
+  @Override
+  public Mono<ResponseEntity<ResetPassword200Response>> resetPassword(
+      Mono<ResetPasswordRequest> resetPasswordRequest) {
+    return resetPasswordRequest.flatMap(
+        request -> {
+          return applicationTokenRepository
+              .findByToken(request.getResetPasswordToken())
+              .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR19)))
+              .flatMap(
+                  token -> {
+                    // validate the reset password token
+                    ErrorCode errorCode = validResetPasswordToken(token);
+
+                    if (errorCode != null) {
+                      return Mono.error(new ApplicationException(errorCode));
+                    }
+                    String userEmail = jwtUtils.extractUserEmail(request.getResetPasswordToken());
+
+                    // get the user and then reset the password
+                    return userRepository
+                        .findByEmail(userEmail)
+                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR1)))
+                        .flatMap(
+                            user -> {
+                              // resetting user password
+                              user.setPasswordHash(
+                                  passwordEncoder.encode(request.getNewPassword()));
+                              // mark the token as used
+                              token.setUsageCount(token.getUsageCount() + 1);
+
+                              return userRepository
+                                  .save(user)
+                                  .then(applicationTokenRepository.save(token));
+                            });
+                  })
+              .map(
+                  savedToken -> {
+                    ResetPassword200Response response = new ResetPassword200Response();
+                    response.setMessage("Reset password successfully");
+
+                    return ResponseEntity.ok(response);
+                  });
+        });
+  }
+
+  private ErrorCode validResetPasswordToken(ApplicationToken token) {
+    boolean isExpired = jwtUtils.isTokenExpired(token.getToken());
+    boolean isUsed = token.getUsageCount() == token.getLimitUsageCount();
+
+    if (isExpired || isUsed) {
+      return ErrorCode.AUTH_ERROR20;
+    }
+
+    return null;
   }
 
   @Override
@@ -162,15 +222,17 @@ public class AuthServiceImpl implements AuthService {
 
     return authenticationSettingRepository
         .findByUserId(user.getId())
-        .zipWith(
-            loginHistoryRepository
-                .findByUserIdAndIpAddressAndUserAgent(
-                    user.getId(), request.getIpAddress(), request.getUserAgent())
-                .switchIfEmpty(Mono.just(createNewLoginHistory(user, request))))
+        //            .zipWith(
+        //                    loginHistoryRepository
+        //                            .findByUserIdAndIpAddressAndUserAgent(
+        //                                    user.getId(), request.getIpAddress(),
+        // request.getUserAgent())
+        //                            .switchIfEmpty(Mono.just(createNewLoginHistory(user,
+        // request))))
         .flatMap(
-            tuple2 -> {
-              AuthenticationSetting authSettings = tuple2.getT1();
-              LoginHistory loginHistory = tuple2.getT2();
+            authSettings -> {
+              //                      AuthenticationSetting authSettings = tuple2.getT1();
+              //                      LoginHistory loginHistory = tuple2.getT2();
 
               //              if (!loginHistory.getIsSaved()) {
               // Check if MFA is required
@@ -179,7 +241,15 @@ public class AuthServiceImpl implements AuthService {
               }
               //              }
 
-              if (!loginHistory.getIsSuccessful()) loginHistory.setIsSuccessful(true);
+              //                      if (!loginHistory.getIsSuccessful())
+              // loginHistory.setIsSuccessful(true);
+
+              LoginHistory loginHistory = new LoginHistory();
+              loginHistory.setUserId(authSettings.getUserId());
+              loginHistory.setIpAddress(
+                  "HARDCODED IP"); // TODO: please refactor this, and redesign login flow
+              loginHistory.setUserAgent("HARDCODED USER AGENT");
+              loginHistory.setIsSuccessful(false);
 
               return loginHistoryRepository.save(loginHistory);
             });
@@ -204,7 +274,7 @@ public class AuthServiceImpl implements AuthService {
     refreshToken.setLimitUsageCount(5); // TODO: move this to application.properties
     refreshToken.setLastUsed(OffsetDateTime.now());
 
-    return refreshTokenRepository.save(refreshToken);
+    return applicationTokenRepository.save(refreshToken);
   }
 
   // TODO: move this to util class
@@ -281,7 +351,7 @@ public class AuthServiceImpl implements AuthService {
               refreshToken.setUsageCount(refreshToken.getUsageCount() + 1);
               refreshToken.setLastUsed(OffsetDateTime.now());
 
-              return refreshTokenRepository.save(refreshToken).then(Mono.just(accessToken));
+              return applicationTokenRepository.save(refreshToken).then(Mono.just(accessToken));
             });
   }
 
