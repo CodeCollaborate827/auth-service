@@ -11,11 +11,11 @@ import reactor.core.publisher.Mono;
 public interface VerificationCodeRepository extends R2dbcRepository<VerificationCode, UUID> {
 
   @Query(
-      "SELECT * FROM verification_code WHERE user_id = :userId AND type = :type ORDER BY created_at DESC LIMIT 1")
-  Mono<VerificationCode> findByUserIdAndTypeLatest(UUID userId, VerificationCode.Type type);
+      "SELECT * FROM verification_code WHERE user_email = :email AND type = :type ORDER BY created_at DESC LIMIT 1")
+  Mono<VerificationCode> findByUserEmailAndTypeLatest(String email, VerificationCode.Type type);
 
   @Query(
-      "SELECT * FROM verification_code WHERE email = :email AND code = :code AND type = :type ORDER BY created_at DESC LIMIT 1")
+      "SELECT * FROM verification_code WHERE user_email = :email AND code = :code AND type = :type ORDER BY created_at DESC LIMIT 1")
   Mono<VerificationCode> findByUserEmailAndCodeAndTypeLatest(
       String email, String code, VerificationCode.Type type);
 }

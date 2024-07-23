@@ -1,12 +1,12 @@
 package com.chat.auth_service.repository;
 
-import com.chat.auth_service.entity.RefreshToken;
+import com.chat.auth_service.entity.ApplicationToken;
 import java.util.UUID;
 import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Mono;
 
 @Repository
-public interface RefreshTokenRepository extends R2dbcRepository<RefreshToken, UUID> {
-  Mono<RefreshToken> findByRefreshToken(String refreshToken);
+public interface ApplicationTokenRepository extends R2dbcRepository<ApplicationToken, UUID> {
+  Mono<ApplicationToken> findByToken(String refreshToken);
 }
