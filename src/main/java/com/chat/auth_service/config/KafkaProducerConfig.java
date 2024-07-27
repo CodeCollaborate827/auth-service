@@ -1,56 +1,33 @@
 package com.chat.auth_service.config;
 
-import jakarta.annotation.PostConstruct;
-import org.apache.kafka.clients.admin.NewTopic;
-import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.common.serialization.StringSerializer;
-import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
-import org.springframework.boot.ssl.SslBundles;
+import com.chat.auth_service.event.NewRegistryEvent;
+import java.util.function.Supplier;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.kafka.config.TopicBuilder;
-import org.springframework.kafka.support.serializer.JsonSerializer;
-import reactor.kafka.sender.KafkaSender;
-import reactor.kafka.sender.SenderOptions;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Sinks;
 
-import java.util.HashMap;
-import java.util.Map;
-
+@Slf4j
 @Configuration
 public class KafkaProducerConfig {
-    private SenderOptions<String,String> senderOptions;
+  private final Sinks.Many<Message<NewRegistryEvent>> newRegistrySink =
+      Sinks.many().unicast().onBackpressureBuffer();
 
-    @Value("${topic.new-register}")
-    private String NEW_REGISTER_TOPIC;
+  @Bean
+  public Supplier<Flux<Message<NewRegistryEvent>>> sendNewRegistry() {
+    return newRegistrySink::asFlux;
+  }
 
-    @Value("${spring.kafka.bootstrap-servers}")
-    private String bootstrapServers;
-
-    @Value("${spring.kafka.producer.compression-type}")
-    private String compressionType;
-
-    @Bean
-    public NewTopic newRegistryTopic() {
-        return TopicBuilder.name(NEW_REGISTER_TOPIC)
-                .partitions(1)
-                .replicas(1)
-                .build();
+  public void sendNewRegistryEvent(NewRegistryEvent event) {
+    Message<NewRegistryEvent> message = MessageBuilder.withPayload(event).build();
+    Sinks.EmitResult result = newRegistrySink.tryEmitNext(message);
+    if (result.isFailure()) {
+      log.error("Failed to emit new registry event: {}", result);
+    } else {
+      log.info("New registry event emitted successfully");
     }
-
-    @PostConstruct
-    public void initProducer(KafkaProperties kafkaProperties, SslBundles sslBundles) {
-        // using buildProducerProperties(SslBundles bundles) instead of buildProducerProperties() to avoid SSL issues
-        Map<String, Object> producerProps = new HashMap<>(kafkaProperties.buildProducerProperties(sslBundles));
-        producerProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        producerProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        producerProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
-
-        this.senderOptions = SenderOptions.create(producerProps);
-    }
-
-    @Bean
-    public KafkaSender<?, ?> kafkaSender() {
-        return KafkaSender.create(this.senderOptions);
-    }
+  }
 }
