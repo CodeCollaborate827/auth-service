@@ -39,9 +39,6 @@ public class AuthServiceImpl implements AuthService {
   @Value("${jwt.limit-refresh-token-usage-consecutive-minutes}")
   private int LIMIT_REFRESH_TOKEN_USAGE_CONSECUTIVE_MINUTES;
 
-  @Value("${kafka.topic.new-register}")
-    private String NEW_USER_REGISTER_TOPIC;
-
   private final VerificationCodeRepository verificationCodeRepository;
 
   @Override
@@ -137,11 +134,11 @@ public class AuthServiceImpl implements AuthService {
                     if (errorCode != null) {
                       return Mono.error(new ApplicationException(errorCode));
                     }
-                    String userEmail = jwtUtils.extractUserEmail(request.getResetPasswordToken());
+                    String userId = jwtUtils.extractUserId(request.getResetPasswordToken());
 
                     // get the user and then reset the password
                     return userRepository
-                        .findByEmail(userEmail)
+                        .findById(Utils.convertStringToUUID(userId))
                         .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR1)))
                         .flatMap(
                             user -> {
@@ -294,7 +291,8 @@ public class AuthServiceImpl implements AuthService {
     NewRegistryEvent event =
         NewRegistryEvent.builder().userId(user.getId().toString()).registry(registry).build();
 
-    return kafkaProducer.send(NEW_USER_REGISTER_TOPIC, event).then(Mono.just(user));
+    kafkaProducer.sendNewRegistryEvent(event);
+    return Mono.just(user);
   }
 
   // TODO: move this to util class
@@ -356,7 +354,7 @@ public class AuthServiceImpl implements AuthService {
             token -> {
               // extract user id and find user by id
               UUID userId =
-                  Utils.convertStringToUUID(jwtUtils.extractUserID(refreshToken.getToken()));
+                  Utils.convertStringToUUID(jwtUtils.extractUserId(refreshToken.getToken()));
 
               return userRepository
                   .findById(userId)

@@ -5,19 +5,24 @@ import com.chat.auth_service.event.NewRegistryEvent;
 import com.chat.auth_service.service.KafkaProducer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Mono;
+import reactor.core.publisher.Sinks;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class KafkaProducerImpl implements KafkaProducer {
-  private final KafkaProducerConfig kafkaProducerConfig;
 
   @Override
-  public <T> Mono<Void> send(String bindingDestination, T data) {
-    log.info("Sending data to Kafka topic: {}, data: {}", bindingDestination, data);
-    return Mono.fromRunnable(
-        () -> kafkaProducerConfig.sendNewRegistryEvent((NewRegistryEvent) data));
+  public void sendNewRegistryEvent(NewRegistryEvent event) {
+    Message<NewRegistryEvent> message = MessageBuilder.withPayload(event).build();
+    Sinks.EmitResult result = KafkaProducerConfig.newRegistrySink.tryEmitNext(message);
+    if (result.isFailure()) {
+      log.error("Failed to emit new registry event: {}", result);
+    } else {
+      log.info("New registry event emitted successfully");
+    }
   }
 }

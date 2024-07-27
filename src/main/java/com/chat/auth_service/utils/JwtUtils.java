@@ -38,8 +38,7 @@ public class JwtUtils {
             "ip_address",
             IP_ADDRESS,
             "type",
-            TokenType.REFRESH_TOKEN.name()
-        );
+            TokenType.REFRESH_TOKEN.name());
     return Jwts.builder()
         .claims(claims)
         .subject(Utils.convertUUIDToString(user.getId()))
@@ -60,8 +59,7 @@ public class JwtUtils {
             "ip_address",
             IP_ADDRESS,
             "type",
-            TokenType.REFRESH_TOKEN.name()
-        );
+            TokenType.REFRESH_TOKEN.name());
     return Jwts.builder()
         .claims(claims)
         .subject(Utils.convertUUIDToString(user.getId()))
@@ -82,8 +80,7 @@ public class JwtUtils {
             "ip_address",
             IP_ADDRESS,
             "type",
-            TokenType.RESET_PASSWORD_TOKEN.name()
-        );
+            TokenType.RESET_PASSWORD_TOKEN.name());
     return Jwts.builder()
         .claims(claims)
         .subject(Utils.convertUUIDToString(user.getId()))
@@ -110,6 +107,10 @@ public class JwtUtils {
 
   public String extractIpAddress(String jwt) {
     return extractClaim(jwt, claims -> claims.get("ip_address", String.class));
+  }
+
+  public String extractUserId(String jwt) {
+    return extractClaim(jwt, Claims::getSubject);
   }
 
   private <T> T extractClaim(String jwt, Function<Claims, T> claimsResolver) {

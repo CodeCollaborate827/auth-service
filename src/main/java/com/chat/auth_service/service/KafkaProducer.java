@@ -1,7 +1,7 @@
 package com.chat.auth_service.service;
 
-import reactor.core.publisher.Mono;
+import com.chat.auth_service.event.NewRegistryEvent;
 
 public interface KafkaProducer {
-  <T> Mono<Void> send(String bindingDestination, T data);
+  void sendNewRegistryEvent(NewRegistryEvent data);
 }

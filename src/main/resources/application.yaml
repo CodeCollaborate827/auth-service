@@ -31,7 +31,8 @@ spring:
     validateOnMigrate: false
   mail:
     host: smtp.gmail.com
-    password: password
+    username: alexdevo300031@gmail.com
+    password: fukzxprulhgrwtbi
     port: 587
     properties:
       mail:
@@ -39,7 +40,6 @@ spring:
           auth: true
           starttls:
             enable: true
-    username: username
   profiles:
     active: dev
   r2dbc:
