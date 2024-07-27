@@ -1,11 +1,13 @@
 package com.chat.auth_service.service.implementation;
 
 import com.chat.auth_service.entity.*;
+import com.chat.auth_service.event.NewRegistryEvent;
 import com.chat.auth_service.exception.ApplicationException;
 import com.chat.auth_service.exception.ErrorCode;
 import com.chat.auth_service.repository.*;
 import com.chat.auth_service.server.model.*;
 import com.chat.auth_service.service.AuthService;
+import com.chat.auth_service.service.KafkaProducer;
 import com.chat.auth_service.utils.JwtUtils;
 import com.chat.auth_service.utils.Utils;
 import java.time.Duration;
@@ -32,9 +34,13 @@ public class AuthServiceImpl implements AuthService {
   private final ApplicationTokenRepository applicationTokenRepository;
   private final MailServiceImpl mailService;
   private final JwtUtils jwtUtils;
+  private final KafkaProducer kafkaProducer;
 
   @Value("${jwt.limit-refresh-token-usage-consecutive-minutes}")
   private int LIMIT_REFRESH_TOKEN_USAGE_CONSECUTIVE_MINUTES;
+
+  @Value("${kafka.topic.new-register}")
+    private String NEW_USER_REGISTER_TOPIC;
 
   private final VerificationCodeRepository verificationCodeRepository;
 
@@ -275,6 +281,20 @@ public class AuthServiceImpl implements AuthService {
     refreshToken.setLastUsed(OffsetDateTime.now());
 
     return applicationTokenRepository.save(refreshToken);
+  }
+
+  private Mono<User> sendNewUserToKafka(User user) {
+    NewRegistryEvent.Registry registry =
+        NewRegistryEvent.Registry.builder()
+            .id(user.getId().toString())
+            .username(user.getUsername())
+            .email(user.getEmail())
+            .createdAt(user.getCreatedAt())
+            .build();
+    NewRegistryEvent event =
+        NewRegistryEvent.builder().userId(user.getId().toString()).registry(registry).build();
+
+    return kafkaProducer.send(NEW_USER_REGISTER_TOPIC, event).then(Mono.just(user));
   }
 
   // TODO: move this to util class

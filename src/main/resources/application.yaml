@@ -1,0 +1,48 @@
+jwt:
+  expiration-time-access-token: 30
+  expiration-time-refresh-token: 12
+  limit-refresh-token-usage-consecutive-minutes: 5
+  secret-key: 462D4A614E645267556B58703272357538782F413F4428472B4B625065536856
+mail:
+  from: mail@gmail.com
+  path:
+    register-verification-mail: classpath:/mail/verification-mail.html
+server:
+  port: 8080
+spring:
+  application:
+    name: auth-service
+  cloud:
+    function:
+      definition: sendNewRegistry
+    stream:
+      bindings:
+        sendNewRegistry-out-0:
+          destination: chatapp.new-user
+      kafka:
+        binder:
+          brokers: localhost:9092
+  flyway:
+    baselineOnMigrate: true
+    enabled: true
+    password: ${spring.r2dbc.password}
+    url: jdbc:postgresql://localhost:5432/auth_service
+    user: ${spring.r2dbc.username}
+    validateOnMigrate: false
+  mail:
+    host: smtp.gmail.com
+    password: password
+    port: 587
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+    username: username
+  profiles:
+    active: dev
+  r2dbc:
+    password: postgres
+    url: r2dbc:postgresql://localhost:5432/auth_service
+    username: postgres

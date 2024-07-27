@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
@@ -28,6 +29,9 @@ public class MailUtils {
 
   @Value("${mail.from}")
   private String from;
+
+  @Autowired
+  private ResourceLoader resourceLoader;
 
   @Async("mailSenderThreadPoolTaskExecutor")
   public void sendVerificationEmail(String subject, String email, VerificationCode code) {
