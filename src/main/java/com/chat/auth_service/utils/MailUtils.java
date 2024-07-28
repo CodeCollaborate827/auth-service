@@ -45,7 +45,7 @@ public class MailUtils {
       message.setContent(htmlTemplate, "text/html; charset=utf-8");
       log.info("Sending email ...");
       mailSender.send(message);
-      log.info("Sent email successfull!");
+      log.info("Sent email successfully!");
     } catch (Exception e) {
       log.error("ERROR when sending the email: {}", e);
     }

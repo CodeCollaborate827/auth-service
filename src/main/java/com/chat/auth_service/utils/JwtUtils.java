@@ -6,7 +6,6 @@ import com.chat.auth_service.exception.ApplicationException;
 import com.chat.auth_service.exception.ErrorCode;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import java.util.Date;
@@ -34,57 +33,57 @@ public class JwtUtils {
 
     Map<String, String> claims =
         Map.of(
-            "user_id",
-            Utils.convertUUIDToString(user.getId()),
             "user_agent",
             USER_AGENT,
             "ip_address",
-            IP_ADDRESS);
+            IP_ADDRESS,
+            "type",
+            TokenType.REFRESH_TOKEN.name());
     return Jwts.builder()
         .claims(claims)
-        .subject(user.getEmail())
+        .subject(Utils.convertUUIDToString(user.getId()))
         .issuedAt(new Date())
         .expiration(
             new Date(
                 System.currentTimeMillis()
                     + Long.parseLong(EXPIRATION_TIME_ACCESS_TOKEN) * 60 * 1000))
-        .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+        .signWith(getSigningKey(), Jwts.SIG.HS256)
         .compact();
   }
 
   public String generateRefreshToken(User user) {
     Map<String, String> claims =
         Map.of(
-            "user_id",
-            Utils.convertUUIDToString(user.getId()),
             "user_agent",
             USER_AGENT,
             "ip_address",
-            IP_ADDRESS);
+            IP_ADDRESS,
+            "type",
+            TokenType.REFRESH_TOKEN.name());
     return Jwts.builder()
         .claims(claims)
-        .subject(user.getEmail())
+        .subject(Utils.convertUUIDToString(user.getId()))
         .issuedAt(new Date())
         .expiration(
             new Date(
                 System.currentTimeMillis()
                     + Long.parseLong(EXPIRATION_TIME_REFRESH_TOKEN) * 60 * 60 * 1000))
-        .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+        .signWith(getSigningKey(), Jwts.SIG.HS256)
         .compact();
   }
 
   public String generateResetPasswordToken(User user) {
     Map<String, String> claims =
         Map.of(
-            "user_id",
-            Utils.convertUUIDToString(user.getId()),
             "user_agent",
             USER_AGENT,
             "ip_address",
-            IP_ADDRESS);
+            IP_ADDRESS,
+            "type",
+            TokenType.RESET_PASSWORD_TOKEN.name());
     return Jwts.builder()
         .claims(claims)
-        .subject(user.getEmail())
+        .subject(Utils.convertUUIDToString(user.getId()))
         .issuedAt(new Date())
         .expiration(new Date(System.currentTimeMillis() + 30 * 60 * 1000))
         // TODO: this should be JWE
@@ -98,8 +97,8 @@ public class JwtUtils {
     return Keys.hmacShaKeyFor(keyBytes);
   }
 
-  public String extractUserID(String jwt) {
-    return extractClaim(jwt, claims -> claims.get("user_id", String.class));
+  public String extractTokenType(String jwt) {
+    return extractClaim(jwt, claims -> claims.get("type", String.class));
   }
 
   public String extractUserAgent(String jwt) {
@@ -108,6 +107,10 @@ public class JwtUtils {
 
   public String extractIpAddress(String jwt) {
     return extractClaim(jwt, claims -> claims.get("ip_address", String.class));
+  }
+
+  public String extractUserId(String jwt) {
+    return extractClaim(jwt, Claims::getSubject);
   }
 
   private <T> T extractClaim(String jwt, Function<Claims, T> claimsResolver) {
@@ -123,20 +126,16 @@ public class JwtUtils {
     }
   }
 
-  public String extractUserEmail(String jwt) {
-    return extractAllClaims(jwt).getSubject();
-  }
-
-  public boolean validateAccessToken(String jwt, LoginHistory loginHistory, User user) {
-    final String userID = extractUserID(jwt);
+  public boolean validateAccessToken(String jwt, LoginHistory loginHistory) {
+    final String type = extractTokenType(jwt);
     final String userAgent = extractUserAgent(jwt);
     final String ipAddress = extractIpAddress(jwt);
-    final String email = extractClaim(jwt, Claims::getSubject);
+    final String userId = extractClaim(jwt, Claims::getSubject);
 
-    if (!loginHistory.getUserId().toString().equals(userID)
+    if (!TokenType.ACCESS_TOKEN.name().equals(type)
         || !loginHistory.getUserAgent().equals(userAgent)
         || !loginHistory.getIpAddress().equals(ipAddress)
-        || !user.getEmail().equals(email)) {
+        || !loginHistory.getUserId().toString().equals(userId)) {
       throw new ApplicationException(ErrorCode.AUTH_ERROR14);
     } else if (isTokenExpired(jwt)) {
       throw new ApplicationException(ErrorCode.AUTH_ERROR15);
@@ -145,9 +144,9 @@ public class JwtUtils {
   }
 
   public boolean validateRefreshToken(String jwt) {
-    final String userID = extractUserID(jwt);
     final String userAgent = extractUserAgent(jwt);
     final String ipAddress = extractIpAddress(jwt);
+    final String userId = extractClaim(jwt, Claims::getSubject);
 
     // TODO: get the userId and userAgent in the header
 
@@ -167,5 +166,11 @@ public class JwtUtils {
 
   private Date extractExpiration(String jwt) {
     return extractClaim(jwt, Claims::getExpiration);
+  }
+
+  public enum TokenType {
+    ACCESS_TOKEN,
+    REFRESH_TOKEN,
+    RESET_PASSWORD_TOKEN
   }
 }

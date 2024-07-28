@@ -1,0 +1,9 @@
+spring:
+  mail:
+    host: smtp.gmail.com
+    password: spymeshipofsrpxx
+    port: 587
+    username: dogofbravery42@gmail.com
+  r2dbc:
+    password: 5599
+    username: postgres
