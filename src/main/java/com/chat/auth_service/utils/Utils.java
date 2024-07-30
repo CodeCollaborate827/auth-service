@@ -1,9 +1,8 @@
 package com.chat.auth_service.utils;
 
 import com.chat.auth_service.server.model.CommonResponse;
-import org.springframework.http.ResponseEntity;
-
 import java.util.UUID;
+import org.springframework.http.ResponseEntity;
 
 public class Utils {
   public static UUID convertStringToUUID(String id) {
