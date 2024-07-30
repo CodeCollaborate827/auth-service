@@ -13,6 +13,7 @@ import com.chat.auth_service.server.model.*;
 import com.chat.auth_service.service.MailService;
 import com.chat.auth_service.utils.JwtUtils;
 import com.chat.auth_service.utils.MailUtils;
+import com.chat.auth_service.utils.Utils;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.Arrays;
@@ -120,7 +121,7 @@ public class MailServiceImpl implements MailService {
   }
 
   @Override
-  public Mono<ResponseEntity<VerifyEmailResponse>> verifyEmail(
+  public Mono<ResponseEntity<VerifyEmail200Response>> verifyEmail(
       Mono<VerifyEmailRequest> verifyEmailRequest) {
     return verifyEmailRequest.flatMap(
         request -> {
@@ -144,8 +145,15 @@ public class MailServiceImpl implements MailService {
                       return Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR11));
                     }
                   })
-              .map(ResponseEntity.ok()::body);
+              .map(data -> ResponseEntity.ok(mapToVerifyEmail200Response(data)));
         });
+  }
+
+  private VerifyEmail200Response mapToVerifyEmail200Response(VerifyEmail200ResponseAllOfData data) {
+    return new VerifyEmail200Response()
+        .requestId(Utils.generateRequestId())
+        .message("Email verified successfully!")
+        .data(data);
   }
 
   @Override
@@ -193,7 +201,7 @@ public class MailServiceImpl implements MailService {
     return UUID.randomUUID().toString().substring(0, 6).toUpperCase();
   }
 
-  private Mono<VerifyEmailResponse> handleVerifyEmailForRegistration(
+  private Mono<VerifyEmail200ResponseAllOfData> handleVerifyEmailForRegistration(
       VerifyEmailRequest request, User user) {
     return verificationCodeRepository
         .findByUserEmailAndCodeAndTypeLatest(
@@ -219,16 +227,10 @@ public class MailServiceImpl implements MailService {
 
               return userRepository.save(user);
             })
-        .map(
-            saveUser -> {
-              VerifyEmailResponse response = new VerifyEmailResponse();
-              response.setType(ACCOUNT_REGISTRATION.toString());
-              response.setMessage("Email verified successfully!");
-              return response;
-            });
+        .map(saveUser -> mapToVerifyEmail200Response(ACCOUNT_REGISTRATION.toString(), Map.of()));
   }
 
-  private Mono<VerifyEmailResponse> handleVerifyEmailForForgotPassword(
+  private Mono<VerifyEmail200ResponseAllOfData> handleVerifyEmailForForgotPassword(
       VerifyEmailRequest request, User user) {
     return verificationCodeRepository
         .findByUserEmailAndCodeAndTypeLatest(
@@ -251,13 +253,15 @@ public class MailServiceImpl implements MailService {
             resetPasswordToken -> {
               Map<String, String> tokenMap =
                   Map.of(RESET_PASSWORD_TOKEN_KEY, resetPasswordToken.getToken());
+              String type = FORGOT_PASSWORD.toString();
 
-              VerifyEmailResponse response = new VerifyEmailResponse();
-              response.setType(FORGOT_PASSWORD.toString());
-              response.tokens(tokenMap);
-              response.setMessage("Email verified successfully!");
-              return response;
+              return mapToVerifyEmail200Response(type, tokenMap);
             });
+  }
+
+  private VerifyEmail200ResponseAllOfData mapToVerifyEmail200Response(
+      String type, Map<String, String> tokens) {
+    return new VerifyEmail200ResponseAllOfData().type(type).tokens(tokens);
   }
 
   private ApplicationToken createResetPasswordToken(String token) {

@@ -19,31 +19,31 @@ public class AuthApiDelegatorImpl implements AuthApiDelegate {
   // TODO: forgot password endpoint, reset password endpoint, change password endpoint
 
   @Override
-  public Mono<ResponseEntity<ForgotPassword200Response>> forgotPassword(
+  public Mono<ResponseEntity<CommonResponse>> forgotPassword(
       Mono<ForgotPasswordRequest> forgotPasswordRequest, ServerWebExchange exchange) {
     return authService.forgotPassword(forgotPasswordRequest);
   }
 
   @Override
-  public Mono<ResponseEntity<LoginResponse>> login(
+  public Mono<ResponseEntity<Login200Response>> login(
       Mono<LoginRequest> loginRequest, ServerWebExchange exchange) {
     return authService.login(loginRequest);
   }
 
   @Override
-  public Mono<ResponseEntity<LoginOAuth200Response>> loginOAuth(
-      Mono<OAuthLoginRequest> oauthLoginRequest, ServerWebExchange exchange) {
+  public Mono<ResponseEntity<CommonResponse>> loginOAuth(
+      Mono<LoginOAuthRequest> oauthLoginRequest, ServerWebExchange exchange) {
     return AuthApiDelegate.super.loginOAuth(oauthLoginRequest, exchange);
   }
 
   @Override
-  public Mono<ResponseEntity<Register200Response>> register(
+  public Mono<ResponseEntity<CommonResponse>> register(
       Mono<RegisterRequest> registerRequest, ServerWebExchange exchange) {
     return authService.register(registerRequest);
   }
 
   @Override
-  public Mono<ResponseEntity<ResetPassword200Response>> resetPassword(
+  public Mono<ResponseEntity<CommonResponse>> resetPassword(
       Mono<ResetPasswordRequest> resetPasswordRequest, ServerWebExchange exchange) {
     return authService.resetPassword(resetPasswordRequest);
   }
@@ -56,13 +56,13 @@ public class AuthApiDelegatorImpl implements AuthApiDelegate {
   }
 
   @Override
-  public Mono<ResponseEntity<VerifyEmailResponse>> verifyEmail(
+  public Mono<ResponseEntity<VerifyEmail200Response>> verifyEmail(
       Mono<VerifyEmailRequest> verifyEmailRequest, ServerWebExchange exchange) {
     return mailService.verifyEmail(verifyEmailRequest);
   }
 
   @Override
-  public Mono<ResponseEntity<RefreshTokenResponse>> refreshToken(
+  public Mono<ResponseEntity<RefreshToken200Response>> refreshToken(
       Mono<RefreshTokenRequest> refreshTokenRequest, ServerWebExchange exchange) {
     return authService.refreshToken(refreshTokenRequest);
   }

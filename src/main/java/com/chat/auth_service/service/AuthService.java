@@ -5,16 +5,16 @@ import org.springframework.http.ResponseEntity;
 import reactor.core.publisher.Mono;
 
 public interface AuthService {
-  Mono<ResponseEntity<LoginResponse>> login(Mono<LoginRequest> loginRequest);
+  Mono<ResponseEntity<Login200Response>> login(Mono<LoginRequest> loginRequest);
 
-  Mono<ResponseEntity<Register200Response>> register(Mono<RegisterRequest> registerRequest);
+  Mono<ResponseEntity<CommonResponse>> register(Mono<RegisterRequest> registerRequest);
 
-  Mono<ResponseEntity<RefreshTokenResponse>> refreshToken(
+  Mono<ResponseEntity<RefreshToken200Response>> refreshToken(
       Mono<RefreshTokenRequest> refreshTokenRequest);
 
-  Mono<ResponseEntity<ForgotPassword200Response>> forgotPassword(
+  Mono<ResponseEntity<CommonResponse>> forgotPassword(
       Mono<ForgotPasswordRequest> forgotPasswordRequest);
 
-  Mono<ResponseEntity<ResetPassword200Response>> resetPassword(
+  Mono<ResponseEntity<CommonResponse>> resetPassword(
       Mono<ResetPasswordRequest> resetPasswordRequest);
 }

@@ -17,31 +17,20 @@ paths:
       tags:
         - auth
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RegisterRequest'
+        $ref: '#/components/requestBodies/RegisterRequest'
       responses:
         '200':
           description: User registered successfully
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/CommonResponse'
-                  - type: object
-                    properties:
-                      message:
-                        type: string
-                        description: Custom success message
-                        example: "Registration successful"
+                $ref: '#/components/schemas/CommonResponse'
         '500':
           description: Internal Server Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/500InternalError'
+                $ref: '#/components/schemas/CommonResponse'
   /auth/login:
     post:
       summary: Login a user
@@ -49,25 +38,17 @@ paths:
       tags:
         - auth
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LoginRequest'
+        $ref: '#/components/requestBodies/LoginRequest'
       responses:
         '200':
-          description: User logged in successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/LoginResponse'
+          $ref: '#/components/responses/LoginResponse'
 
         '500':
           description: Internal Server Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/500InternalError'
+                $ref: '#/components/schemas/CommonResponse'
   /auth/login-oauth:
     post:
       summary: Login a user using OAuth
@@ -75,31 +56,20 @@ paths:
       tags:
         - auth
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/OAuthLoginRequest'
+        $ref: '#/components/requestBodies/OAuthLoginRequest'
       responses:
         '200':
           description: User logged in successfully
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/CommonResponse'
-                  - type: object
-                    properties:
-                      message:
-                        type: string
-                        description: Custom success message
-                        example: "Login successful"
+                $ref: '#/components/schemas/CommonResponse'
         '500':
           description: Internal Server Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/500InternalError'
+                $ref: '#/components/schemas/CommonResponse'
   /auth/verify-email:
     post:
       summary: Verify email
@@ -107,24 +77,16 @@ paths:
       tags:
         - auth
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/VerifyEmailRequest'
+        $ref: '#/components/requestBodies/VerifyEmailRequest'
       responses:
         '200':
-          description: Email verified successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/VerifyEmailResponse'
+          $ref: '#/components/responses/VerifyEmailResponse'
         '500':
           description: Internal Server Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/500InternalError'
+                $ref: '#/components/schemas/CommonResponse'
   /auth/resend-verification-email:
     post:
         summary: Resend email verification code
@@ -132,10 +94,7 @@ paths:
         tags:
             - auth
         requestBody:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResendVerificationEmailRequest'
+          $ref: '#/components/requestBodies/ResendVerificationEmailRequest'
         responses:
             '200':
               description: Email verification code sent successfully
@@ -148,13 +107,13 @@ paths:
               content:
                   application/json:
                     schema:
-                      $ref: '#/components/schemas/CommonErrorResponse'
+                      $ref: '#/components/schemas/CommonResponse'
             '500':
               description: Internal Server Error
               content:
                   application/json:
                     schema:
-                      $ref: '#/components/schemas/500InternalError'
+                      $ref: '#/components/schemas/CommonResponse'
   /auth/forgot-password:
     post:
       summary: Forgot password
@@ -162,30 +121,20 @@ paths:
       tags:
         - auth
       requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ForgotPasswordRequest'
+        $ref: '#/components/requestBodies/ForgotPasswordRequest'
       responses:
         '200':
           description: Password reset link sent successfully
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/CommonResponse'
-                  - type: object
-                    properties:
-                      message:
-                        type: string
-                        description: Custom success message
-                        example: "Verification code sent to email"
+                $ref: '#/components/schemas/CommonResponse'
         '500':
           description: Internal Server Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/500InternalError'
+                $ref: '#/components/schemas/CommonResponse'
   /auth/reset-password:
     post:
       summary: Reset password
@@ -193,31 +142,20 @@ paths:
       tags:
         - auth
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ResetPasswordRequest'
+        $ref: '#/components/requestBodies/ResetPasswordRequest'
       responses:
         '200':
           description: Password reset successfully
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/CommonResponse'
-                  - type: object
-                    properties:
-                      message:
-                        type: string
-                        description: Custom success message
-                        example: "Password reset successfully"
+                $ref: '#/components/schemas/CommonResponse'
         '500':
           description: Internal Server Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/500InternalError'
+                $ref: '#/components/schemas/CommonResponse'
   /auth/refresh-token:
     post:
       summary: Refresh token
@@ -237,154 +175,17 @@ paths:
                   example: "eyJhbGciO"
       responses:
         '200':
-          description: Token refreshed successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RefreshTokenResponse'
+          $ref: '#/components/responses/RefreshTokenResponse'
         '500':
           description: Internal Server Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/500InternalError'
+                $ref: '#/components/schemas/CommonResponse'
 
 components:
   schemas:
     CommonResponse:
-      type: object
-      properties:
-        message:
-          type: string
-          description: Response message
-          example: "Operation successful"
-    RegisterRequest:
-      type: object
-      properties:
-        email:
-          type: string
-          description: User email
-          example: "john.doe@example.com"
-        password:
-          type: string
-          description: User password
-          example: "password"
-        username:
-          type: string
-          description: User username
-          example: "johndoe"
-        displayName:
-          type: string
-          description: User display name
-          example: "John Doe"
-    500InternalError:
-      type: object
-      description: Internal Server Error Occurred
-      properties:
-        errorCode:
-          type: string
-          description: internalServerErrorOccurred
-          example: ERROR1
-        message:
-          type: string
-          description: Internal Server Error has Occurred
-          example: Internal Server Error has Occurred
-    LoginRequest:
-      type: object
-      properties:
-        email:
-          type: string
-          description: User email
-          example: "john.doe@gmajl.com"
-        password:
-          type: string
-          description: User password
-          example: "password"
-        ipAddress:
-          type: string
-          description: User IP address
-          example: "123.123.123.123"
-        userAgent:
-          type: string
-          description: User agent
-          example: "Mozilla/5.0"
-    OAuthLoginRequest:
-      type: object
-      properties:
-        authorizationCode:
-          type: string
-          description: Authorization code from OAuth provider
-          example: "authorizationCode"
-    VerifyEmailRequest:
-      type: object
-      properties:
-        type:
-          type: string
-          description: Type of verify email request
-          example: "ACCOUNT_REGISTRATION"
-        email:
-          type: string
-          description: User email
-          example: "johndoe@example.com"
-        verificationCode:
-          type: string
-          description: "Verification code sent to the user's email"
-          example: "212038"
-    VerifyEmailResponse:
-      type: object
-      properties:
-        type:
-          type: string
-          description: Type of email verification
-          example: "ACCOUNT_REGISTRATION"
-        message:
-          type: string
-          description: Response message
-          example: "Email verified successfully"
-        tokens:
-          type: object
-          description: Tokens that can be used for later usage
-    ForgotPasswordRequest:
-      type: object
-      properties:
-        email:
-          type: string
-          description: user email
-          example: "john.doe@gmail.com"
-    ResetPasswordRequest:
-      type: object
-      properties:
-        resetPasswordToken:
-          type: string
-          description: Token used for reset password
-          example: "eyJhbGciOiJIUzM4NCJ9.eyJpcF9hZGRyZXNzIjoiSVBfQUREUkVTUyIsInVzZXJfYWdlbnQiOiJVU0VSX0FHRU5UIiwidXNlcl9pZCI6ImMzN2RiMzBkLWU2N2UtNDJmZC05NDYxLWZiMjY0ZThhYjI2OCIsInN1YiI6ImZvcmV4YW1zMjVAZ21haWwuY29tIiwiaWF0IjoxNzIxNjE0NTMzLCJleHAiOjE3MjE2NTc3MzN9.tCedlChMKbt6S8DcacMZfNiML2zSmK-yCkR2sUpN6a1znDzfvTwu0NgUMeADEPvd"
-        newPassword:
-          type: string
-          description: User new password
-          example: "newPassword"
-    ResendVerificationEmailRequest:
-      type: object
-      properties:
-          type:
-            type: string
-            description: Type of email verification
-            example: "ACCOUNT_REGISTRATION"
-          email:
-            type: string
-            description: User email
-            example: "johndoe@example.com"
-    ResendVerificationEmailSuccessfulResponse:
-      type: object
-      properties:
-        message:
-          type: string
-          description: Response message
-          example: "Email verification code sent successfully"
-        retryAfterSeconds:
-            type: integer
-            description: Retry after seconds
-            example: 120
-    CommonErrorResponse:
       type: object
       properties:
         errorCode:
@@ -394,24 +195,218 @@ components:
         message:
           type: string
           description: Response message
-          example: "Operation Failed"
-
-    RefreshTokenResponse:
-      type: object
-      properties:
-        accessToken:
+          example: "Operation Success"
+        requestId:
           type: string
-          description: New access token
-          example: "eyJhbGciO"
+          description: Unique identifier for the friend request
+          example: "req11921"
+  requestBodies:
+    RegisterRequest:
+      description: Register request
+      required: true
+      content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  description: User email
+                  example: "john.doe@example.com"
+                password:
+                  type: string
+                  description: User password
+                  example: "password"
+                username:
+                  type: string
+                  description: User username
+                  example: "johndoe"
+                displayName:
+                  type: string
+                  description: User display name
+                  example: "John Doe"
+    LoginRequest:
+      description: Login request
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              email:
+                type: string
+                description: User email
+                example: "john.doe@gmajl.com"
+              password:
+                type: string
+                description: User password
+                example: "password"
+              ipAddress:
+                type: string
+                description: User IP address
+                example: "123.123.123.123"
+              userAgent:
+                type: string
+                description: User agent
+                example: "Mozilla/5.0"
+    OAuthLoginRequest:
+      description: OAuth login request
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              authorizationCode:
+                type: string
+                description: Authorization code from OAuth provider
+                example: "authorizationCode"
+    VerifyEmailRequest:
+      description: Verify email request
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              type:
+                type: string
+                description: Type of verify email request
+                example: "ACCOUNT_REGISTRATION"
+              email:
+                type: string
+                description: User email
+                example: "johndoe@example.com"
+              verificationCode:
+                type: string
+                description: "Verification code sent to the user's email"
+                example: "212038"
+    ForgotPasswordRequest:
+      description: Forgot password request
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              email:
+                type: string
+                description: user email
+                example: "john.doe@gmail.com"
+    ResetPasswordRequest:
+      description: Reset password request
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              resetPasswordToken:
+                type: string
+                description: Token used for reset password
+                example: "eyJhbGciOiJIUzM4NCJ9.eyJpcF9hZGRyZXNzIjoiSVBfQUREUkVTUyIsInVzZXJfYWdlbnQiOiJVU0VSX0FHRU5UIiwidXNlcl9pZCI6ImMzN2RiMzBkLWU2N2UtNDJmZC05NDYxLWZiMjY0ZThhYjI2OCIsInN1YiI6ImZvcmV4YW1zMjVAZ21haWwuY29tIiwiaWF0IjoxNzIxNjE0NTMzLCJleHAiOjE3MjE2NTc3MzN9.tCedlChMKbt6S8DcacMZfNiML2zSmK-yCkR2sUpN6a1znDzfvTwu0NgUMeADEPvd"
+              newPassword:
+                type: string
+                description: User new password
+                example: "newPassword"
+    ResendVerificationEmailRequest:
+      description: Resend verification email request
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              type:
+                type: string
+                description: Type of email verification
+                example: "ACCOUNT_REGISTRATION"
+              email:
+                type: string
+                description: User email
+                example: "johndoe@example.com"
+  responses:
+    VerifyEmailResponse:
+      description: Email verification response
+      content:
+        application/json:
+          schema:
+            type: object
+            allOf:
+              - $ref: '#/components/schemas/CommonResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
+                    description: Verification data
+                    properties:
+                      type:
+                        type: string
+                        description: Type of email verification
+                        example: "ACCOUNT_REGISTRATION"
+                      tokens:
+                        type: object
+                        description: Tokens that can be used for later usage
+    ResendVerificationEmailSuccessfulResponse:
+      description: Resend verification email successful response
+      content:
+        application/json:
+          schema:
+            type: object
+            allOf:
+              - $ref: '#/components/schemas/CommonResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
+                    description: Verification data
+                    properties:
+                      message:
+                        type: string
+                        description: Response message
+                        example: "Email verification code sent successfully"
+                      retryAfterSeconds:
+                        type: integer
+                        description: Retry after seconds
+                        example: 120
+    RefreshTokenResponse:
+      description: Refresh token response
+      content:
+        application/json:
+          schema:
+            type: object
+            allOf:
+              - $ref: '#/components/schemas/CommonResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
+                    description: Verification data
+                    properties:
+                      accessToken:
+                        type: string
+                        description: New access token
+                        example: "eyJhbGciO"
 
     LoginResponse:
-      type: object
-      properties:
-        accessToken:
-          type: string
-          description: Access token
-          example: "eyJhbGciO"
-        refreshToken:
-          type: string
-          description: Refresh token
-          example: "eyJhbGciO"
+      description: Email verification response
+      content:
+        application/json:
+          schema:
+            type: object
+            allOf:
+              - $ref: '#/components/schemas/CommonResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
+                    description: Verification data
+                    properties:
+                      accessToken:
+                        type: string
+                        description: Access token
+                        example: "eyJhbGciO"
+                      refreshToken:
+                        type: string
+                        description: Refresh token
+                        example: "eyJhbGciO"
