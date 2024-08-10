@@ -42,7 +42,6 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/LoginResponse'
-
         '500':
           description: Internal Server Error
           content:

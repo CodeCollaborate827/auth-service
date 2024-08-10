@@ -226,6 +226,9 @@ public class MailServiceImpl implements MailService {
               user.setUpdatedAt(OffsetDateTime.now());
 
               return userRepository.save(user);
+
+
+              //TODO please generate the access and refresh token here!
             })
         .map(saveUser -> mapToVerifyEmail200Response(ACCOUNT_REGISTRATION.toString(), Map.of()));
   }
