@@ -48,6 +48,7 @@ public class AuthServiceImpl implements AuthService {
             userRepository
                 .findByEmail(request.getEmail())
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR1)))
+                .flatMap(user -> validateAndSaveLoginHistoryRequest(request, user))
                 .flatMap(
                     user -> {
                       // Generate and save refresh token
@@ -201,7 +202,7 @@ public class AuthServiceImpl implements AuthService {
         });
   }
 
-  private Mono<LoginHistory> validateAndSaveLoginHistoryRequest(LoginRequest request, User user) {
+  private Mono<User> validateAndSaveLoginHistoryRequest(LoginRequest request, User user) {
     // Check if password is correct
     if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
       return saveFailedLoginHistory(user.getId(), request)
@@ -214,40 +215,10 @@ public class AuthServiceImpl implements AuthService {
           .then(Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR3)));
     }
 
-    return authenticationSettingRepository
-        .findByUserId(user.getId())
-        .zipWith(
-            loginHistoryRepository
-                .findByUserIdAndIpAddressAndUserAgent(
-                    user.getId(), request.getIpAddress(), request.getUserAgent())
-                .switchIfEmpty(Mono.just(new LoginHistory())))
-        .flatMap(
-            tuple -> {
-              AuthenticationSetting authSetting = tuple.getT1();
-              LoginHistory loginHistory = tuple.getT2();
+    // TODO: save user login history here
 
-              // if haven't login with ip and user agent yet, handle default MFA method (email
-              // verify code)
-              if (loginHistory.getIpAddress() == null && loginHistory.getUserAgent() == null) {
-                log.info("Login History not exist yet");
-                return saveNewLoginHistoryWithMfa(
-                    createNewLoginHistory(user, request), authSetting);
-              }
-              // if login with ip and user agent before, check if MFA is enabled
-              else {
-                if (!loginHistory.getIsSuccessful()) {
-                  log.info("Login History exist but not successful for previous login");
-                  return handleMfaLogin(loginHistory, authSetting)
-                      .flatMap(
-                          mfaResult -> {
-                            loginHistory.setIsSuccessful(true);
-                            return loginHistoryRepository.save(loginHistory);
-                          });
-                }
-              }
+    return Mono.just(user);
 
-              return Mono.just(loginHistory);
-            });
   }
 
   private Mono<LoginHistory> saveNewLoginHistoryWithMfa(
