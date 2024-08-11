@@ -218,7 +218,6 @@ public class AuthServiceImpl implements AuthService {
     // TODO: save user login history here
 
     return Mono.just(user);
-
   }
 
   private Mono<LoginHistory> saveNewLoginHistoryWithMfa(
