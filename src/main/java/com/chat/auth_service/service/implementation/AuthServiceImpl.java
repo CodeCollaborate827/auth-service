@@ -49,22 +49,19 @@ public class AuthServiceImpl implements AuthService {
                 .findByEmail(request.getEmail())
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR1)))
                 .flatMap(
-                    user ->
-                        validateAndSaveLoginHistoryRequest(
-                                request, user) // TODO: refactor this, re-design the login flow
-                            .flatMap(
-                                history -> {
-                                  // Generate and save refresh token
-                                  String accessToken = jwtUtils.generateAccessToken(user);
-                                  return saveRefreshToken(user)
-                                      .flatMap(
-                                          savedRefreshToken ->
-                                              Mono.just(
-                                                  ResponseEntity.ok(
-                                                      mapLoginResponse(
-                                                          accessToken,
-                                                          savedRefreshToken.getToken()))));
-                                })));
+                    user -> {
+                      // Generate and save refresh token
+                      String accessToken = jwtUtils.generateAccessToken(user);
+                      //TODO: save the login history
+                      return saveRefreshToken(user)
+                          .flatMap(
+                              savedRefreshToken ->
+                                  Mono.just(
+                                      ResponseEntity.ok(
+                                          mapLoginResponse(
+                                              accessToken,
+                                              savedRefreshToken.getToken()))));
+                    }));
   }
 
   private Login200Response mapLoginResponse(String accessToken, String refreshToken) {
