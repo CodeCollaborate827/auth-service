@@ -227,8 +227,7 @@ public class MailServiceImpl implements MailService {
 
               return userRepository.save(user);
 
-
-              //TODO please generate the access and refresh token here!
+              // TODO please generate the access and refresh token here!
             })
         .map(saveUser -> mapToVerifyEmail200Response(ACCOUNT_REGISTRATION.toString(), Map.of()));
   }

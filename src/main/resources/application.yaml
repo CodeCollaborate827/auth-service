@@ -14,11 +14,11 @@ spring:
     name: auth-service
   cloud:
     function:
-      definition: sendNewRegistry
+      definition: userRegistrationDownstream
     stream:
       bindings:
-        sendNewRegistry-out-0:
-          destination: chatapp.new-user
+        userRegistrationDownstream-out-0:
+          destination: topic.user.registration
       kafka:
         binder:
           brokers: localhost:9092

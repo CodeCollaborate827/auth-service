@@ -224,6 +224,22 @@ components:
                   type: string
                   description: User display name
                   example: "John Doe"
+                avatar:
+                  type: string
+                  description: User avatar
+                  example: "https://example.com/avatar.jpg"
+                city:
+                  type: string
+                  description: user city location
+                  example: "Hanoi"
+                dateOfBirth:
+                  type: string
+                  format: date
+                  description: User date of birth
+                  example: "2002-01-01"
+                gender:
+                  type: string
+                  enum: [male, female, other]
     LoginRequest:
       description: Login request
       required: true

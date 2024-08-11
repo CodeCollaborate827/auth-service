@@ -1,7 +1,7 @@
 package com.chat.auth_service.service.implementation;
 
 import com.chat.auth_service.entity.*;
-import com.chat.auth_service.event.NewRegistryEvent;
+import com.chat.auth_service.event.UserRegistrationEvent;
 import com.chat.auth_service.exception.ApplicationException;
 import com.chat.auth_service.exception.ErrorCode;
 import com.chat.auth_service.repository.*;
@@ -52,15 +52,14 @@ public class AuthServiceImpl implements AuthService {
                     user -> {
                       // Generate and save refresh token
                       String accessToken = jwtUtils.generateAccessToken(user);
-                      //TODO: save the login history
+                      // TODO: save the login history
                       return saveRefreshToken(user)
                           .flatMap(
                               savedRefreshToken ->
                                   Mono.just(
                                       ResponseEntity.ok(
                                           mapLoginResponse(
-                                              accessToken,
-                                              savedRefreshToken.getToken()))));
+                                              accessToken, savedRefreshToken.getToken()))));
                     }));
   }
 
@@ -176,7 +175,7 @@ public class AuthServiceImpl implements AuthService {
           // Check if email is already registered
           return createNewUserFromRequest(request)
               .flatMap(userRepository::save)
-              .flatMap(this::sendNewUserToKafka)
+              .doOnNext(user -> this.sendUserRegistrationEventToDownStream(user, request))
               .flatMap(
                   savedUser -> {
                     AuthenticationSetting authenticationSetting =
@@ -284,19 +283,20 @@ public class AuthServiceImpl implements AuthService {
     return applicationTokenRepository.save(refreshToken);
   }
 
-  private Mono<User> sendNewUserToKafka(User user) {
-    NewRegistryEvent.Registry registry =
-        NewRegistryEvent.Registry.builder()
-            .id(user.getId().toString())
-            .username(user.getUsername())
+  private void sendUserRegistrationEventToDownStream(User user, RegisterRequest request) {
+    UserRegistrationEvent.Gender gender =
+        UserRegistrationEvent.Gender.valueOf(request.getGender().getValue());
+    UserRegistrationEvent event =
+        UserRegistrationEvent.builder()
+            .userId(user.getId().toString())
             .email(user.getEmail())
+            .city(request.getCity())
+            .dateOfBirth(request.getDateOfBirth().toString())
+            .displayName(request.getDisplayName())
+            .gender(gender)
             .createdAt(user.getCreatedAt())
             .build();
-    NewRegistryEvent event =
-        NewRegistryEvent.builder().userId(user.getId().toString()).registry(registry).build();
-
     kafkaProducer.sendNewRegistryEvent(event);
-    return Mono.just(user);
   }
 
   // TODO: move this to util class

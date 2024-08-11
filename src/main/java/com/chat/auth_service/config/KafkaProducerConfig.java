@@ -1,6 +1,6 @@
 package com.chat.auth_service.config;
 
-import com.chat.auth_service.event.NewRegistryEvent;
+import com.chat.auth_service.event.Event;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
@@ -12,11 +12,11 @@ import reactor.core.publisher.Sinks;
 @Slf4j
 @Configuration
 public class KafkaProducerConfig {
-  public static final Sinks.Many<Message<NewRegistryEvent>> newRegistrySink =
+  public static final Sinks.Many<Message<Event>> userRegistrationDownstreamSink =
       Sinks.many().unicast().onBackpressureBuffer();
 
-  @Bean
-  public Supplier<Flux<Message<NewRegistryEvent>>> sendNewRegistry() {
-    return newRegistrySink::asFlux;
+  @Bean("userRegistrationDownstream")
+  public Supplier<Flux<Message<Event>>> userRegistrationDownstream() {
+    return userRegistrationDownstreamSink::asFlux;
   }
 }
