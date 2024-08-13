@@ -259,6 +259,7 @@ public class AuthServiceImpl implements AuthService {
     UserRegistrationEvent event =
         UserRegistrationEvent.builder()
             .userId(user.getId().toString())
+            .username(user.getUsername())
             .email(user.getEmail())
             .city(request.getCity())
             .dateOfBirth(request.getDateOfBirth().toString())
