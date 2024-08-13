@@ -265,6 +265,7 @@ public class AuthServiceImpl implements AuthService {
             .displayName(request.getDisplayName())
             .gender(gender)
             .createdAt(user.getCreatedAt())
+            .avatar(request.getAvatar())
             .build();
     kafkaProducer.sendNewRegistryEvent(event);
   }

@@ -1,6 +1,6 @@
 package com.chat.auth_service.service.implementation;
 
-import com.chat.auth_service.config.KafkaProducerConfig;
+import com.chat.auth_service.config.ProducerBindingConfig;
 import com.chat.auth_service.event.Event;
 import com.chat.auth_service.event.UserRegistrationEvent;
 import com.chat.auth_service.service.KafkaProducer;
@@ -25,7 +25,7 @@ public class KafkaProducerImpl implements KafkaProducer {
       event = EventUtils.buildEvent(userRegistrationEvent);
       Message<Event> message = MessageBuilder.withPayload(event).build();
       Sinks.EmitResult result =
-          KafkaProducerConfig.userRegistrationDownstreamSink.tryEmitNext(message);
+          ProducerBindingConfig.userRegistrationDownstreamSink.tryEmitNext(message);
       if (result.isFailure()) {
         log.error("Failed to emit new registry event: {}", result);
       } else {

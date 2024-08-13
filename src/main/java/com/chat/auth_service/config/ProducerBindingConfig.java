@@ -11,7 +11,7 @@ import reactor.core.publisher.Sinks;
 
 @Slf4j
 @Configuration
-public class KafkaProducerConfig {
+public class ProducerBindingConfig {
   public static final Sinks.Many<Message<Event>> userRegistrationDownstreamSink =
       Sinks.many().unicast().onBackpressureBuffer();
 
