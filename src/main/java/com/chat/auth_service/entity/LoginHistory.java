@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 @Data
@@ -16,11 +17,25 @@ import org.springframework.data.relational.core.mapping.Table;
 @AllArgsConstructor
 public class LoginHistory {
   @Id private UUID id;
+
+  @Column("user_id")
   private UUID userId;
+
+  @Column("ip_address")
   private String ipAddress;
+
+  @Column("user_agent")
   private String userAgent;
+
+  @Column("is_successful")
   private Boolean isSuccessful;
+
   //  private Boolean isSaved;
-  @CreatedDate private OffsetDateTime createdAt;
-  @LastModifiedDate private OffsetDateTime updatedAt;
+  @CreatedDate
+  @Column("created_at")
+  private OffsetDateTime createdAt;
+
+  @LastModifiedDate
+  @Column("updated_at")
+  private OffsetDateTime updatedAt;
 }

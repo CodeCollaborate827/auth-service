@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 @Data
@@ -17,11 +18,23 @@ import org.springframework.data.relational.core.mapping.Table;
 public class AuthenticationSetting {
   @Id private UUID id;
   private UUID userId;
+
+  @Column("mfa_enabled")
   private Boolean mfaEnabled;
+
+  @Column("newLoginNotification")
   private Boolean newLoginNotification;
+
+  @Column("mfaType")
   private MfaType mfaType;
-  @CreatedDate private OffsetDateTime createdAt;
-  @LastModifiedDate private OffsetDateTime updatedAt;
+
+  @CreatedDate
+  @Column("created_at")
+  private OffsetDateTime createdAt;
+
+  @LastModifiedDate
+  @Column("updated_at")
+  private OffsetDateTime updatedAt;
 
   public enum MfaType {
     VERIFY_EMAIL_CODE,

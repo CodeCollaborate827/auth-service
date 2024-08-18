@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 @Data
@@ -21,15 +22,22 @@ public class User {
 
   private String email;
 
+  @Column("password_hash")
   private String passwordHash;
 
+  @Column("access_type")
   private AccountType accountType;
 
+  @Column("account_status")
   private AccountStatus accountStatus;
 
-  @CreatedDate private OffsetDateTime createdAt;
+  @CreatedDate
+  @Column("created_at")
+  private OffsetDateTime createdAt;
 
-  @LastModifiedDate private OffsetDateTime updatedAt;
+  @LastModifiedDate
+  @Column("updated_at")
+  private OffsetDateTime updatedAt;
 
   public enum AccountType {
     NORMAL,
