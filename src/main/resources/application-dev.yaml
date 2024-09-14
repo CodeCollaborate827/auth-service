@@ -5,5 +5,5 @@ spring:
     port: 587
     username: dogofbravery42@gmail.com
   r2dbc:
-    password: 5599
+    password: root
     username: postgres
