@@ -185,6 +185,9 @@
 							<goal>generate</goal>
 						</goals>
 						<configuration>
+							<globalProperties>
+								<skipFormModel>false</skipFormModel>
+							</globalProperties>
 							<inputSpec>
 								${project.basedir}/src/main/resources/openapi/api.yml
 							</inputSpec>
