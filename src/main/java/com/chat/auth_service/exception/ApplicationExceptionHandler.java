@@ -14,7 +14,7 @@ public class ApplicationExceptionHandler {
 
     commonErrorResponse.errorCode(errorCode.name());
     commonErrorResponse.setMessage(errorCode.getErrorMessage());
-
+    commonErrorResponse.setRequestId(ex.getRequestId());
     return ResponseEntity.status(errorCode.getHttpStatus()).body(commonErrorResponse);
   }
 }

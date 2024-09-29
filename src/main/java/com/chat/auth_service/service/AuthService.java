@@ -4,17 +4,22 @@ import com.chat.auth_service.server.model.*;
 import org.springframework.http.ResponseEntity;
 import reactor.core.publisher.Mono;
 
-public interface AuthService {
-  Mono<ResponseEntity<Login200Response>> login(Mono<LoginRequest> loginRequest);
+import java.util.UUID;
 
-  Mono<ResponseEntity<CommonResponse>> register(Mono<RegisterRequest> registerRequest);
+public interface AuthService {
+  Mono<ResponseEntity<Login200Response>> login(Mono<LoginRequest> loginRequest, String requestId);
+
+  Mono<ResponseEntity<CommonResponse>> register(Mono<RegisterRequest> registerRequest, String requestId);
 
   Mono<ResponseEntity<RefreshToken200Response>> refreshToken(
-      Mono<RefreshTokenRequest> refreshTokenRequest);
+          Mono<RefreshTokenRequest> refreshTokenRequest, String requestId);
 
   Mono<ResponseEntity<CommonResponse>> forgotPassword(
-      Mono<ForgotPasswordRequest> forgotPasswordRequest);
+          Mono<ForgotPasswordRequest> forgotPasswordRequest, String requestId);
 
   Mono<ResponseEntity<CommonResponse>> resetPassword(
-      Mono<ResetPasswordRequest> resetPasswordRequest);
+          Mono<ResetPasswordRequest> resetPasswordRequest, String requestId);
+
+  Mono<ResponseEntity<CommonResponse>> changePassword(
+      Mono<ChangePasswordRequest> changePasswordRequest, String requestId, UUID userId);
 }
