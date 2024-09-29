@@ -11,27 +11,22 @@ import com.chat.auth_service.service.KafkaProducer;
 import com.chat.auth_service.utils.JwtUtils;
 import com.chat.auth_service.utils.Utils;
 import java.time.Duration;
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Objects;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.codec.multipart.FilePart;
-import org.springframework.http.codec.multipart.FormFieldPart;
-import org.springframework.http.codec.multipart.Part;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
+  private static final Logger log = LoggerFactory.getLogger(AuthServiceImpl.class);
+
   private final UserRepository userRepository;
   private final AuthenticationSettingRepository authenticationSettingRepository;
   private final LoginHistoryRepository loginHistoryRepository;
@@ -164,7 +159,7 @@ public class AuthServiceImpl implements AuthService {
 
   private ErrorCode validResetPasswordToken(ApplicationToken token) {
     boolean isExpired = jwtUtils.isTokenExpired(token.getToken());
-    boolean isUsed = Objects.equals(token.getUsageCount(), token.getLimitUsageCount());
+    boolean isUsed = token.getUsageCount() == token.getLimitUsageCount();
 
     if (isExpired || isUsed) {
       return ErrorCode.AUTH_ERROR20;
@@ -174,90 +169,40 @@ public class AuthServiceImpl implements AuthService {
   }
 
   @Override
-  public Mono<ResponseEntity<CommonResponse>> register(
-      Flux<Part> email,
-      Flux<Part> password,
-      Flux<Part> username,
-      Flux<Part> displayName,
-      Flux<Part> city,
-      Flux<Part> dateOfBirth,
-      Flux<Part> gender,
-      Flux<Part> avatar) {
+  public Mono<ResponseEntity<CommonResponse>> register(Mono<RegisterRequest> registerRequest) {
     // TODO: refactor code, move the util methods to Utils class
-    return Mono.zip(
-            extractValue(email),
-            extractValue(password),
-            extractValue(username),
-            extractValue(displayName),
-            extractValue(city),
-            extractDateValue(dateOfBirth),
-            extractValue(gender),
-            extractFile(avatar))
-        .flatMap(
-            tuple -> {
-              String emailStr = tuple.getT1();
-              String passwordStr = tuple.getT2();
-              String usernameStr = tuple.getT3();
-              String displayNameStr = tuple.getT4();
-              String cityStr = tuple.getT5();
-              LocalDate dateOfBirthStr = tuple.getT6();
-              String genderStr = tuple.getT7();
-              FilePart avatarFile = tuple.getT8();
-
-              // TODO: upload avatar to cloud storage
-
-              // Check if email is already registered
-              return createNewUserFromParts(emailStr, passwordStr, usernameStr)
-                  .flatMap(userRepository::save)
-                  .doOnNext(user -> sendUserRegistrationEventToDownStream(user, usernameStr, emailStr, cityStr, dateOfBirthStr, displayNameStr, genderStr, avatarFile.filename()))
-                  .flatMap(
-                      savedUser -> {
-                        AuthenticationSetting authenticationSetting =
-                            createAuthenticationSetting(savedUser);
-                        VerificationCode verificationCode =
-                            mailService.createEmailVerificationCodeForAccountRegistration(
-                                savedUser);
-                        return authenticationSettingRepository
-                            .save(authenticationSetting)
-                            .then(mailService.saveVerificationCode(verificationCode))
-                            .doOnNext(
-                                // TODO: move the title of the email to a constant
-                                savedVerificationCode ->
-                                    mailService.sendVerificationEmail(
-                                        "Verify email for account registration",
-                                        savedUser.getEmail(),
-                                        savedVerificationCode))
-                            .then(Mono.just(savedUser));
-                      })
-                  .map(
-                      savedUser ->
-                          Utils.createCommonSuccessResponse(
-                              "Registration successful. Please check your email to verify your account."));
-            });
+    return registerRequest.flatMap(
+        request -> {
+          // Check if email is already registered
+          return createNewUserFromRequest(request)
+              .flatMap(userRepository::save)
+              .doOnNext(user -> this.sendUserRegistrationEventToDownStream(user, request))
+              .flatMap(
+                  savedUser -> {
+                    AuthenticationSetting authenticationSetting =
+                        createAuthenticationSetting(savedUser);
+                    VerificationCode verificationCode =
+                        mailService.createEmailVerificationCodeForAccountRegistration(savedUser);
+                    return authenticationSettingRepository
+                        .save(authenticationSetting)
+                        .then(mailService.saveVerificationCode(verificationCode))
+                        .doOnNext(
+                            // TODO: move the title of the email to a constant
+                            savedVerificationCode ->
+                                mailService.sendVerificationEmail(
+                                    "Verify email for account registration",
+                                    savedUser.getEmail(),
+                                    savedVerificationCode))
+                        .then(Mono.just(savedUser));
+                  })
+              .map(
+                  savedUser ->
+                      Utils.createCommonSuccessResponse(
+                          "Registration successful. Please check your email to verify your account."));
+        });
   }
 
-    private Mono<String> extractValue(Flux<Part> partFlux) {
-        return partFlux
-                .filter(FormFieldPart.class::isInstance)
-                .cast(FormFieldPart.class)
-                .map(FormFieldPart::value)
-                .singleOrEmpty();
-    }
-
-    private Mono<FilePart> extractFile(Flux<Part> partFlux) {
-        return partFlux
-                .filter(FilePart.class::isInstance)
-                .cast(FilePart.class)
-                .singleOrEmpty();
-    }
-
-    private Mono<LocalDate> extractDateValue(Flux<Part> partFlux) {
-        return extractValue(partFlux)
-                .map(dateStr -> LocalDate.parse(dateStr, DateTimeFormatter.ISO_DATE));
-    }
-
-
-    private Mono<User> validateAndSaveLoginHistoryRequest(LoginRequest request, User user) {
+  private Mono<User> validateAndSaveLoginHistoryRequest(LoginRequest request, User user) {
     // Check if password is correct
     if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
       return saveFailedLoginHistory(user.getId(), request)
@@ -308,62 +253,57 @@ public class AuthServiceImpl implements AuthService {
     return applicationTokenRepository.save(refreshToken);
   }
 
-    private void sendUserRegistrationEventToDownStream(User user,
-                                                       String usernameStr,
-                                                       String emailStr,
-                                                       String cityStr,
-                                                       LocalDate dateOfBirthStr,
-                                                       String displayNameStr,
-                                                       String genderStr,
-                                                       String avatar) {
-
-        UserRegistrationEvent.Gender gender = UserRegistrationEvent.Gender.valueOf(genderStr.toUpperCase());
-
-        UserRegistrationEvent event = UserRegistrationEvent.builder()
-                .userId(user.getId().toString())
-                .username(usernameStr)
-                .email(emailStr)
-                .city(cityStr)
-                .dateOfBirth(dateOfBirthStr.toString())
-                .displayName(displayNameStr)
-                .gender(gender)
-                .createdAt(user.getCreatedAt())
-                .avatar(avatar)
-                .build();
-        kafkaProducer.sendNewRegistryEvent(event);
-    }
+  private void sendUserRegistrationEventToDownStream(User user, RegisterRequest request) {
+    UserRegistrationEvent.Gender gender =
+        UserRegistrationEvent.Gender.valueOf(request.getGender().getValue());
+    UserRegistrationEvent event =
+        UserRegistrationEvent.builder()
+            .userId(user.getId().toString())
+            .username(user.getUsername())
+            .email(user.getEmail())
+            .city(request.getCity())
+            .dateOfBirth(request.getDateOfBirth().toString())
+            .displayName(request.getDisplayName())
+            .gender(gender)
+            .createdAt(user.getCreatedAt())
+            .avatar(request.getAvatar())
+            .build();
+    kafkaProducer.sendNewRegistryEvent(event);
+  }
 
   // TODO: move this to util class
-  private Mono<User> createNewUserFromParts(String email, String password, String username) {
-    // Check if email and username are unique
-    return Mono.zip(userRepository.existsByEmail(email), userRepository.existsByUsername(username))
+  private Mono<User> createNewUserFromRequest(RegisterRequest request) {
+    return Mono.zip(
+            userRepository.existsByEmail(request.getEmail()),
+            userRepository.existsByUsername(request.getUsername()))
         .flatMap(
             tuple2 -> {
               Boolean existedByEmail = tuple2.getT1();
               Boolean existedByUsername = tuple2.getT2();
 
-              if (Boolean.TRUE.equals(existedByEmail)) {
+              if (existedByEmail) {
                 return Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR2));
               }
 
-              if (Boolean.TRUE.equals(existedByUsername)) {
+              if (existedByUsername) {
                 return Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR4));
               }
+              User newUser = createNewUser(request);
+              return Mono.just(newUser);
+            });
+  }
 
-              return Mono.just(
-                  User.builder()
-                      .email(email)
-                      .username(username)
-                      .passwordHash(passwordEncoder.encode(password))
-                      .accountType(User.AccountType.NORMAL)
-                      .accountStatus(User.AccountStatus.UNVERIFIED)
-                      .build());
-            })
-        .onErrorMap(
-            e ->
-                e instanceof ApplicationException
-                    ? e
-                    : new RuntimeException("Error creating user: " + e.getMessage()));
+  // TODO: move this to util class
+  private User createNewUser(RegisterRequest request) {
+    User newUser = new User();
+    newUser.setEmail(request.getEmail());
+    newUser.setUsername(request.getUsername());
+    newUser.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+    newUser.setAccountType(User.AccountType.NORMAL);
+    newUser.setAccountStatus(
+        User.AccountStatus.UNVERIFIED); // Set to INACTIVE until email is verified
+
+    return newUser;
   }
 
   // TODO: move this to util class
