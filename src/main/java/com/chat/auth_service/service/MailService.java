@@ -11,10 +11,10 @@ import reactor.core.publisher.Mono;
 public interface MailService {
 
   Mono<ResponseEntity<CommonResponse>> rendSendVerificationEmail(
-      Mono<ResendVerificationEmailRequest> resendVerificationEmailRequest);
+          Mono<ResendVerificationEmailRequest> resendVerificationEmailRequest, String requestId);
 
   Mono<ResponseEntity<VerifyEmail200Response>> verifyEmail(
-      Mono<VerifyEmailRequest> verifyEmailRequest);
+          Mono<VerifyEmailRequest> verifyEmailRequest, String requestId);
 
   void sendVerificationEmail(
       String verifyEmail, String email, VerificationCode savedVerificationCode);

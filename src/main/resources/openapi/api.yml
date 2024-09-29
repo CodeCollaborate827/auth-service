@@ -181,7 +181,40 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CommonResponse'
-
+  /auth/change-password:
+    post:
+      summary: Change password
+      operationId: change password
+      tags:
+        - auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                oldPassword:
+                  type: string
+                  description: Old password
+                  example: "oldpassword"
+                newPassword:
+                  type: string
+                  description: New password
+                  example: "newpassword"
+      responses:
+        '200':
+          description: Password reset link sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonResponse'
 components:
   schemas:
     CommonResponse:
