@@ -46,6 +46,11 @@ spring:
     password: postgres
     url: r2dbc:postgresql://localhost:5432/auth_service
     username: postgres
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 10MB
 eureka:
   client:
     service-url:

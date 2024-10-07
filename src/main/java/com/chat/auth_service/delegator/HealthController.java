@@ -21,7 +21,7 @@ public class HealthController {
   @GetMapping("/health")
   public Map<String, Object> getHealth() {
     log.info("Health check via GET");
-    Map<String, Object> map = new HashMap<String, Object>();
+    Map<String, Object> map = new HashMap<>();
     map.put("name", applicationName);
     map.put("timestamp", OffsetDateTime.now());
     return map;
@@ -30,7 +30,7 @@ public class HealthController {
   @PostMapping("/health")
   public Map<String, Object> postHealth() {
     log.info("Health check via POST");
-    Map<String, Object> map = new HashMap<String, Object>();
+    Map<String, Object> map = new HashMap<>();
     map.put("name", applicationName);
     map.put("timestamp", OffsetDateTime.now());
     return map;

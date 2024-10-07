@@ -1,33 +1,30 @@
 package com.chat.auth_service.service.implementation;
 
+import static com.chat.auth_service.entity.VerificationCode.Type.*;
+
 import com.chat.auth_service.entity.ApplicationToken;
 import com.chat.auth_service.entity.LoginHistory;
 import com.chat.auth_service.entity.User;
 import com.chat.auth_service.entity.VerificationCode;
 import com.chat.auth_service.exception.ApplicationException;
 import com.chat.auth_service.exception.ErrorCode;
-import com.chat.auth_service.repository.ApplicationTokenRepository;
-import com.chat.auth_service.repository.UserRepository;
-import com.chat.auth_service.repository.VerificationCodeRepository;
+import com.chat.auth_service.repository.*;
 import com.chat.auth_service.server.model.*;
 import com.chat.auth_service.service.MailService;
 import com.chat.auth_service.utils.JwtUtils;
 import com.chat.auth_service.utils.MailUtils;
 import com.chat.auth_service.utils.Utils;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Service;
-import reactor.core.publisher.Mono;
-
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
-
-import static com.chat.auth_service.entity.VerificationCode.Type.*;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import reactor.core.publisher.Mono;
 
 @Service
 @RequiredArgsConstructor
@@ -47,7 +44,7 @@ public class MailServiceImpl implements MailService {
 
   @Override
   public Mono<ResponseEntity<CommonResponse>> rendSendVerificationEmail(
-          Mono<ResendVerificationEmailRequest> resendVerificationEmailRequest, String requestId) {
+      Mono<ResendVerificationEmailRequest> resendVerificationEmailRequest) {
 
     // TODO: some of the logic is the same as sending verification email;
     // TODO: clean tnis code
@@ -56,13 +53,13 @@ public class MailServiceImpl implements MailService {
           return userRepository
               .findByEmail(request.getEmail())
               // check if user exists
-              .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR1, requestId)))
+              .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR1)))
               // validate the request
               .flatMap(
                   user -> {
                     ErrorCode errorCode = validateEmailVerificationRequest(user, request.getType());
                     if (errorCode != null) {
-                      return Mono.error(new ApplicationException(errorCode, requestId));
+                      return Mono.error(new ApplicationException(errorCode));
                     }
 
                     return Mono.just(user);
@@ -77,7 +74,7 @@ public class MailServiceImpl implements MailService {
                             verificationCode -> {
                               boolean exceededRateLimit = checkExceedRateLimit(verificationCode);
                               if (exceededRateLimit) {
-                                return Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR10, requestId));
+                                return Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR10));
                               }
 
                               return Mono.just(user);
@@ -125,27 +122,27 @@ public class MailServiceImpl implements MailService {
 
   @Override
   public Mono<ResponseEntity<VerifyEmail200Response>> verifyEmail(
-          Mono<VerifyEmailRequest> verifyEmailRequest, String requestId) {
+      Mono<VerifyEmailRequest> verifyEmailRequest) {
     return verifyEmailRequest.flatMap(
         request -> {
-          return getUserByEmailAndThrowExceptionNotExists(request.getEmail(), requestId)
+          return getUserByEmailAndThrowExceptionNotExists(request.getEmail())
               .flatMap(
                   user -> {
                     ErrorCode errorCode = validateEmailVerificationRequest(user, request.getType());
 
                     if (errorCode != null) {
-                      return Mono.error(new ApplicationException(errorCode, requestId));
+                      return Mono.error(new ApplicationException(errorCode));
                     }
 
                     VerificationCode.Type requestType =
                         VerificationCode.Type.valueOf(request.getType());
 
                     if (requestType.equals(ACCOUNT_REGISTRATION)) {
-                      return handleVerifyEmailForRegistration(request, user, requestId);
+                      return handleVerifyEmailForRegistration(request, user);
                     } else if (requestType.equals(FORGOT_PASSWORD)) {
-                      return handleVerifyEmailForForgotPassword(request, user, requestId);
+                      return handleVerifyEmailForForgotPassword(request, user);
                     } else {
-                      return Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR11, requestId));
+                      return Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR11));
                     }
                   })
               .map(data -> ResponseEntity.ok(mapToVerifyEmail200Response(data)));
@@ -205,23 +202,23 @@ public class MailServiceImpl implements MailService {
   }
 
   private Mono<VerifyEmail200ResponseAllOfData> handleVerifyEmailForRegistration(
-          VerifyEmailRequest request, User user, String requestId) {
+      VerifyEmailRequest request, User user) {
     return verificationCodeRepository
         .findByUserEmailAndCodeAndTypeLatest(
             request.getEmail(), request.getVerificationCode(), ACCOUNT_REGISTRATION)
-        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR12, requestId)))
+        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR12)))
         .flatMap(
             verificationCode -> {
               ErrorCode errorCode =
                   validateVerificationCode(verificationCode, request.getVerificationCode());
 
               if (errorCode != null) {
-                return Mono.error(new ApplicationException(errorCode, requestId));
+                return Mono.error(new ApplicationException(errorCode));
               }
 
               // check if user's account was already verified
               if (!Objects.equals(User.AccountStatus.UNVERIFIED, user.getAccountStatus())) {
-                return Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR9, requestId));
+                return Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR9));
               }
 
               // if everything is valid, verify the user account
@@ -236,17 +233,17 @@ public class MailServiceImpl implements MailService {
   }
 
   private Mono<VerifyEmail200ResponseAllOfData> handleVerifyEmailForForgotPassword(
-          VerifyEmailRequest request, User user, String requestId) {
+      VerifyEmailRequest request, User user) {
     return verificationCodeRepository
         .findByUserEmailAndCodeAndTypeLatest(
             request.getEmail(), request.getVerificationCode(), FORGOT_PASSWORD)
-        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR12, requestId)))
+        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR12)))
         .flatMap(
             verificationCode -> {
               ErrorCode errorCode =
                   validateVerificationCode(verificationCode, request.getVerificationCode());
               if (errorCode != null) {
-                return Mono.error(new ApplicationException(errorCode, requestId));
+                return Mono.error(new ApplicationException(errorCode));
               }
 
               ApplicationToken resetPasswordToken =
@@ -297,10 +294,10 @@ public class MailServiceImpl implements MailService {
     return null;
   }
 
-  private Mono<User> getUserByEmailAndThrowExceptionNotExists(String email, String requestId) {
+  private Mono<User> getUserByEmailAndThrowExceptionNotExists(String email) {
     return userRepository
         .findByEmail(email)
-        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR1, requestId)));
+        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR1)));
   }
 
   private boolean checkExceedRateLimit(VerificationCode verificationCode) {

@@ -3,6 +3,7 @@ package com.chat.auth_service.entity;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
@@ -13,6 +14,7 @@ import org.springframework.data.relational.core.mapping.Table;
 
 @Data
 @Table(name = "users")
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class User {

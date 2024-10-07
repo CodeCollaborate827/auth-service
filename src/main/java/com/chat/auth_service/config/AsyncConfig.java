@@ -10,7 +10,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 @EnableAsync
 public class AsyncConfig {
 
-  // TODO: please move these to application.yaml
+  // TODO: please move these to application.properties
   @Bean(name = "mailSenderThreadPoolTaskExecutor")
   public Executor threadPoolTaskExecutor() {
     ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
