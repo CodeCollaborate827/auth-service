@@ -12,6 +12,7 @@ public class ApplicationException extends RuntimeException {
     this.errorCode = errorCode;
     this.requestId = null;
   }
+
   public ApplicationException(ErrorCode errorCode, String requestId) {
     this.errorCode = errorCode;
     this.requestId = requestId;

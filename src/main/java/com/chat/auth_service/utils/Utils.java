@@ -1,9 +1,8 @@
 package com.chat.auth_service.utils;
 
-import com.chat.auth_service.server.model.CommonResponse;
-import org.springframework.http.ResponseEntity;
-
+import com.chat.auth_service.server.model.*;
 import java.util.UUID;
+import org.springframework.http.ResponseEntity;
 
 public class Utils {
   public static UUID convertStringToUUID(String id) {
@@ -18,11 +17,24 @@ public class Utils {
     return UUID.randomUUID().toString();
   }
 
-  public static ResponseEntity<CommonResponse> createCommonSuccessResponse(String message, String requestId) {
+  public static ResponseEntity<CommonResponse> createCommonSuccessResponse(
+      String message, String requestId) {
     CommonResponse commonResponse = new CommonResponse();
     commonResponse.setRequestId(generateRequestId());
     commonResponse.setMessage(message);
     commonResponse.setRequestId(requestId);
     return ResponseEntity.ok(commonResponse);
+  }
+
+  public static CheckEmailExists200Response mapCheckEmailExistsResponse(String requestId) {
+    return new CheckEmailExists200Response()
+        .requestId(requestId)
+        .data(new CheckEmailExists200ResponseAllOfData().isExists(false));
+  }
+
+  public static CheckUsernameExists200Response mapCheckUsernameExistsResponse(String requestId) {
+    return new CheckUsernameExists200Response()
+        .requestId(requestId)
+        .data(new CheckUsernameExists200ResponseAllOfData().isExists(false));
   }
 }
