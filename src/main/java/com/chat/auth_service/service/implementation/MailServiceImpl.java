@@ -1,5 +1,7 @@
 package com.chat.auth_service.service.implementation;
 
+import static com.chat.auth_service.entity.VerificationCode.Type.*;
+
 import com.chat.auth_service.entity.ApplicationToken;
 import com.chat.auth_service.entity.LoginHistory;
 import com.chat.auth_service.entity.User;
@@ -14,20 +16,17 @@ import com.chat.auth_service.service.MailService;
 import com.chat.auth_service.utils.JwtUtils;
 import com.chat.auth_service.utils.MailUtils;
 import com.chat.auth_service.utils.Utils;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Service;
-import reactor.core.publisher.Mono;
-
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
-
-import static com.chat.auth_service.entity.VerificationCode.Type.*;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import reactor.core.publisher.Mono;
 
 @Service
 @RequiredArgsConstructor
@@ -47,7 +46,7 @@ public class MailServiceImpl implements MailService {
 
   @Override
   public Mono<ResponseEntity<CommonResponse>> rendSendVerificationEmail(
-          Mono<ResendVerificationEmailRequest> resendVerificationEmailRequest, String requestId) {
+      Mono<ResendVerificationEmailRequest> resendVerificationEmailRequest, String requestId) {
 
     // TODO: some of the logic is the same as sending verification email;
     // TODO: clean tnis code
@@ -77,7 +76,8 @@ public class MailServiceImpl implements MailService {
                             verificationCode -> {
                               boolean exceededRateLimit = checkExceedRateLimit(verificationCode);
                               if (exceededRateLimit) {
-                                return Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR10, requestId));
+                                return Mono.error(
+                                    new ApplicationException(ErrorCode.AUTH_ERROR10, requestId));
                               }
 
                               return Mono.just(user);
@@ -125,7 +125,7 @@ public class MailServiceImpl implements MailService {
 
   @Override
   public Mono<ResponseEntity<VerifyEmail200Response>> verifyEmail(
-          Mono<VerifyEmailRequest> verifyEmailRequest, String requestId) {
+      Mono<VerifyEmailRequest> verifyEmailRequest, String requestId) {
     return verifyEmailRequest.flatMap(
         request -> {
           return getUserByEmailAndThrowExceptionNotExists(request.getEmail(), requestId)
@@ -145,7 +145,8 @@ public class MailServiceImpl implements MailService {
                     } else if (requestType.equals(FORGOT_PASSWORD)) {
                       return handleVerifyEmailForForgotPassword(request, user, requestId);
                     } else {
-                      return Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR11, requestId));
+                      return Mono.error(
+                          new ApplicationException(ErrorCode.AUTH_ERROR11, requestId));
                     }
                   })
               .map(data -> ResponseEntity.ok(mapToVerifyEmail200Response(data)));
@@ -205,7 +206,7 @@ public class MailServiceImpl implements MailService {
   }
 
   private Mono<VerifyEmail200ResponseAllOfData> handleVerifyEmailForRegistration(
-          VerifyEmailRequest request, User user, String requestId) {
+      VerifyEmailRequest request, User user, String requestId) {
     return verificationCodeRepository
         .findByUserEmailAndCodeAndTypeLatest(
             request.getEmail(), request.getVerificationCode(), ACCOUNT_REGISTRATION)
@@ -236,7 +237,7 @@ public class MailServiceImpl implements MailService {
   }
 
   private Mono<VerifyEmail200ResponseAllOfData> handleVerifyEmailForForgotPassword(
-          VerifyEmailRequest request, User user, String requestId) {
+      VerifyEmailRequest request, User user, String requestId) {
     return verificationCodeRepository
         .findByUserEmailAndCodeAndTypeLatest(
             request.getEmail(), request.getVerificationCode(), FORGOT_PASSWORD)

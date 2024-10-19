@@ -4,6 +4,7 @@ import com.chat.auth_service.server.api.AuthApiDelegate;
 import com.chat.auth_service.server.model.*;
 import com.chat.auth_service.service.AuthService;
 import com.chat.auth_service.service.MailService;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
@@ -11,8 +12,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
-
-import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -36,7 +35,7 @@ public class AuthApiDelegatorImpl implements AuthApiDelegate {
   public Mono<ResponseEntity<Login200Response>> login(
       Mono<LoginRequest> loginRequest, ServerWebExchange exchange) {
     String requestId = extractRequestIdFromHeader(exchange);
-    return authService.login(loginRequest,requestId);
+    return authService.login(loginRequest, requestId);
   }
 
   @Override
@@ -87,6 +86,20 @@ public class AuthApiDelegatorImpl implements AuthApiDelegate {
     String requestId = extractRequestIdFromHeader(exchange);
     UUID userId = extractUserIdFromHeader(exchange);
     return authService.changePassword(changePasswordRequest, requestId, userId);
+  }
+
+  @Override
+  public Mono<ResponseEntity<CheckEmailExists200Response>> checkEmailExists(
+      Mono<CheckEmailExistsRequest> checkEmailExistsRequest, ServerWebExchange exchange) {
+    String requestId = extractRequestIdFromHeader(exchange);
+    return authService.checkEmailExists(checkEmailExistsRequest, requestId);
+  }
+
+  @Override
+  public Mono<ResponseEntity<CheckUsernameExists200Response>> checkUsernameExists(
+      Mono<CheckUsernameExistsRequest> checkUsernameExistsRequest, ServerWebExchange exchange) {
+    String requestId = extractRequestIdFromHeader(exchange);
+    return authService.checkUsernameExists(checkUsernameExistsRequest, requestId);
   }
 
   private String extractRequestIdFromHeader(ServerWebExchange exchange) {
