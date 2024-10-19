@@ -11,11 +11,7 @@ import com.chat.auth_service.service.KafkaProducer;
 import com.chat.auth_service.service.MediaService;
 import com.chat.auth_service.utils.JwtUtils;
 import com.chat.auth_service.utils.Utils;
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.util.Objects;
-import java.util.UUID;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,6 +23,12 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
+
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.util.Objects;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -41,6 +43,7 @@ public class AuthServiceImpl implements AuthService {
   private final JwtUtils jwtUtils;
   private final KafkaProducer kafkaProducer;
   private final MediaService mediaService;
+  private final ObjectMapper objectMapper;
 
   @Value("${jwt.limit-refresh-token-usage-consecutive-minutes}")
   private int LIMIT_REFRESH_TOKEN_USAGE_CONSECUTIVE_MINUTES;
@@ -175,7 +178,6 @@ public class AuthServiceImpl implements AuthService {
     return null;
   }
 
-  @Override
   public Mono<ResponseEntity<CommonResponse>> register(
       Flux<Part> email,
       Flux<Part> password,
@@ -206,30 +208,39 @@ public class AuthServiceImpl implements AuthService {
               String genderStr = tuple.getT7();
               FilePart avatarFile = tuple.getT8();
 
-              Mono<Void> uploadMono =
+              Mono<String> uploadMono =
                   avatarFile != null
-                      ? mediaService.uploadImage(
-                          "register", UUID.randomUUID().toString(), Mono.just(avatarFile))
+                      ? mediaService
+                          .uploadImage(
+                              "register", UUID.randomUUID().toString(), Mono.just(avatarFile))
+                          .mapNotNull(
+                              response -> {
+                                MediaResource mediaResource =
+                                    objectMapper.convertValue(response, MediaResource.class);
+                                return mediaResource.getSecureUrl();
+                              })
                       : Mono.empty();
 
               return uploadMono
-                  .then(createNewUserFromParts(emailStr, passwordStr, usernameStr))
-                  .flatMap(userRepository::save)
-                  .doOnError(
-                      error -> {
-                        throw new ApplicationException(ErrorCode.MEDIA_UPLOAD_FAILED);
-                      })
-                  .doOnNext(
-                      user ->
-                          sendUserRegistrationEventToDownStream(
-                              user,
-                              usernameStr,
-                              emailStr,
-                              cityStr,
-                              dateOfBirthStr,
-                              displayNameStr,
-                              genderStr,
-                              avatarFile.filename()))
+                  .flatMap(
+                      secureUrl ->
+                          createNewUserFromParts(emailStr, passwordStr, usernameStr)
+                              .flatMap(
+                                  user ->
+                                      userRepository
+                                          .save(user)
+                                          .doOnNext(
+                                              savedUser ->
+                                                  sendUserRegistrationEventToDownStream(
+                                                      savedUser,
+                                                      usernameStr,
+                                                      emailStr,
+                                                      cityStr,
+                                                      dateOfBirthStr,
+                                                      displayNameStr,
+                                                      genderStr,
+                                                      secureUrl // Pass secureUrl here
+                                                      ))))
                   .flatMap(this::handleUserRegistration)
                   .map(
                       savedUser ->

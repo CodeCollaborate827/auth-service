@@ -6,7 +6,7 @@ import com.chat.auth_service.response.CommonResponse;
 import com.chat.auth_service.service.MediaService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.multipart.FilePart;
@@ -21,30 +21,16 @@ import reactor.core.publisher.Mono;
 public class MediaServiceImpl implements MediaService {
   private final WebClient.Builder webClientBuilder;
 
-  // TODO: move to application.yaml
-  private static final String MEDIA_SERVICE_URL = "http://media-service/api/media/image";
+  @Value("${media-service.url}")
+  private String MEDIA_SERVICE_URL;
 
   @Override
-  public Mono<Void> uploadImage(String operation, String requestId, Mono<FilePart> filePartMono) {
+  public Mono<Object> uploadImage(String operation, String requestId, Mono<FilePart> filePartMono) {
     return filePartMono
         .flatMap(this::uploadToCloudStorage)
-        .doOnSuccess(
-            response -> {
-              if (response.getStatusCode().is2xxSuccessful()) {
-                log.info(
-                    "Image uploaded successfully for operation: {}, requestId: {}",
-                    operation,
-                    requestId);
-              } else {
-                log.error(
-                    "Failed to upload image for operation: {}, requestId: {}. Status: {}",
-                    operation,
-                    requestId,
-                    response.getStatusCode());
-              }
-            })
         .onErrorResume(error -> Mono.error(new ApplicationException(ErrorCode.MEDIA_UPLOAD_FAILED)))
-        .then();
+        .mapNotNull(ResponseEntity::getBody)
+        .map(CommonResponse::getData);
   }
 
   private Mono<ResponseEntity<CommonResponse>> uploadToCloudStorage(FilePart filePart) {
@@ -55,16 +41,6 @@ public class MediaServiceImpl implements MediaService {
         .contentType(MediaType.MULTIPART_FORM_DATA)
         .body(BodyInserters.fromMultipartData("image", filePart))
         .retrieve()
-        .toEntity(CommonResponse.class)
-        .onErrorResume(
-            error -> {
-              log.error("Error uploading image to media-service", error);
-              return Mono.just(
-                  ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                      .body(
-                          CommonResponse.builder()
-                              .errorCode(ErrorCode.MEDIA_UPLOAD_FAILED)
-                              .build()));
-            });
+        .toEntity(CommonResponse.class);
   }
 }

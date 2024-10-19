@@ -57,3 +57,5 @@ eureka:
       defaultZone: http://localhost:8761/eureka
   instance:
     preferIpAddress: true
+media-service:
+  url: http://media-service/api/media/image
