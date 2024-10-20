@@ -9,8 +9,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.codec.multipart.Part;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Component
@@ -46,9 +48,18 @@ public class AuthApiDelegatorImpl implements AuthApiDelegate {
 
   @Override
   public Mono<ResponseEntity<CommonResponse>> register(
-      Mono<RegisterRequest> registerRequest, ServerWebExchange exchange) {
+      Flux<Part> email,
+      Flux<Part> password,
+      Flux<Part> username,
+      Flux<Part> displayName,
+      Flux<Part> city,
+      Flux<Part> dateOfBirth,
+      Flux<Part> gender,
+      Flux<Part> avatar,
+      ServerWebExchange exchange) {
     String requestId = extractRequestIdFromHeader(exchange);
-    return authService.register(registerRequest, requestId);
+    return authService.register(
+        email, password, username, displayName, city, dateOfBirth, gender, avatar, requestId);
   }
 
   @Override

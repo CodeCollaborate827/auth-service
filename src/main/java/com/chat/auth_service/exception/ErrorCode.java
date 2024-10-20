@@ -25,7 +25,9 @@ public enum ErrorCode {
   AUTH_ERROR18("Refresh token only gets after 5 minutes", 400),
   AUTH_ERROR19("Reset password token not found", 404),
   AUTH_ERROR20("Reset password token invalid", 400),
-  AUTH_ERROR21("Old password is not correct, please try again!", 401);
+  AUTH_ERROR21("Required field is missing", 400),
+
+  MEDIA_UPLOAD_FAILED("Can not upload the image", 500);
 
   private final String errorMessage;
   private final int httpStatus;

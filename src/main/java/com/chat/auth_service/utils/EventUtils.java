@@ -9,6 +9,8 @@ import java.util.Base64;
 
 public class EventUtils {
 
+  private EventUtils() {}
+
   private static ObjectMapper objectMapper =
       JsonMapper.builder()
           // Register JavaTimeModule to handle Java 8 date/time types
@@ -18,10 +20,7 @@ public class EventUtils {
   public static Event buildEvent(Object obj) throws JsonProcessingException {
     String json = objectMapper.writeValueAsString(obj);
     String encodedJson = encodeBase64(json);
-    Event event =
-        Event.builder().type(obj.getClass().toString()).payloadBase64(encodedJson).build();
-
-    return event;
+    return Event.builder().type(obj.getClass().toString()).payloadBase64(encodedJson).build();
   }
 
   private static String encodeBase64(String json) {
