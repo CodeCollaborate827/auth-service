@@ -41,7 +41,7 @@ spring:
           starttls:
             enable: true
   profiles:
-    include: dev, mail
+    include: postgres, mail
   r2dbc:
     password: postgres
     url: r2dbc:postgresql://localhost:5432/auth_service
