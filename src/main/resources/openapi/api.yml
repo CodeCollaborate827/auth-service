@@ -224,7 +224,74 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CommonResponse'
-
+  /auth/change-password:
+    post:
+      summary: Change password
+      operationId: change password
+      tags:
+        - auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                oldPassword:
+                  type: string
+                  description: Old password
+                  example: "oldpassword"
+                newPassword:
+                  type: string
+                  description: New password
+                  example: "newpassword"
+      responses:
+        '200':
+          description: Password reset link sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonResponse'
+  /auth/check-email-exists:
+    get:
+      summary: Check if email exists
+      operationId: checkEmailExists
+      tags:
+        - auth
+      requestBody:
+        $ref: '#/components/requestBodies/CheckEmailExistsRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/CheckEmailExistsResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonResponse'
+  /auth/check-username-exists:
+    get:
+      summary: Check if username exists
+      operationId: checkUsernameExists
+      tags:
+        - auth
+      requestBody:
+        $ref: '#/components/requestBodies/CheckUsernameExistsRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/CheckUsernameExistsResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonResponse'
 components:
   schemas:
     CommonResponse:
@@ -343,7 +410,67 @@ components:
                 type: string
                 description: User email
                 example: "johndoe@example.com"
+    CheckEmailExistsRequest:
+      description: Check email exists request
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              email:
+                type: string
+                description: User email
+                example: "johndoe@example.com"
+    CheckUsernameExistsRequest:
+      description: Check username exists request
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              username:
+                type: string
+                description: User username
+                example: "johndoe"
   responses:
+    CheckEmailExistsResponse:
+      description: Check email exists response
+      content:
+        application/json:
+          schema:
+            type: object
+            allOf:
+              - $ref: '#/components/schemas/CommonResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
+                    description: Verification data
+                    properties:
+                      isExists:
+                        type: boolean
+                        description: Email exists or not
+                        example: true
+    CheckUsernameExistsResponse:
+      description: Check username exists response
+      content:
+        application/json:
+          schema:
+            type: object
+            allOf:
+              - $ref: '#/components/schemas/CommonResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
+                    description: Verification data
+                    properties:
+                      isExists:
+                        type: boolean
+                        description: Username exists or not
+                        example: true
     VerifyEmailResponse:
       description: Email verification response
       content:

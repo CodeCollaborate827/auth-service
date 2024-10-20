@@ -2,7 +2,7 @@ package com.chat.auth_service.utils;
 
 import com.chat.auth_service.exception.ApplicationException;
 import com.chat.auth_service.exception.ErrorCode;
-import com.chat.auth_service.server.model.CommonResponse;
+import com.chat.auth_service.server.model.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
@@ -32,11 +32,24 @@ public class Utils {
     return UUID.randomUUID().toString();
   }
 
-  public static ResponseEntity<CommonResponse> createCommonSuccessResponse(String message) {
+  public static ResponseEntity<CommonResponse> createCommonSuccessResponse(
+      String message, String requestId) {
     CommonResponse commonResponse = new CommonResponse();
-    commonResponse.setRequestId(generateRequestId());
     commonResponse.setMessage(message);
+    commonResponse.setRequestId(requestId);
     return ResponseEntity.ok(commonResponse);
+  }
+
+  public static CheckEmailExists200Response mapCheckEmailExistsResponse(String requestId) {
+    return new CheckEmailExists200Response()
+        .requestId(requestId)
+        .data(new CheckEmailExists200ResponseAllOfData().isExists(false));
+  }
+
+  public static CheckUsernameExists200Response mapCheckUsernameExistsResponse(String requestId) {
+    return new CheckUsernameExists200Response()
+        .requestId(requestId)
+        .data(new CheckUsernameExists200ResponseAllOfData().isExists(false));
   }
 
   public static Mono<String> extractValue(Flux<Part> partFlux) {

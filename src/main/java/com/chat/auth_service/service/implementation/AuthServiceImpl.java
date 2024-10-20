@@ -12,11 +12,6 @@ import com.chat.auth_service.service.MediaService;
 import com.chat.auth_service.utils.JwtUtils;
 import com.chat.auth_service.utils.Utils;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.util.Objects;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,6 +23,11 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
+
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -43,20 +43,21 @@ public class AuthServiceImpl implements AuthService {
   private final KafkaProducer kafkaProducer;
   private final MediaService mediaService;
   private final ObjectMapper objectMapper;
+  private final VerificationCodeRepository verificationCodeRepository;
 
   @Value("${jwt.limit-refresh-token-usage-consecutive-minutes}")
   private int LIMIT_REFRESH_TOKEN_USAGE_CONSECUTIVE_MINUTES;
 
-  private final VerificationCodeRepository verificationCodeRepository;
-
   @Override
-  public Mono<ResponseEntity<Login200Response>> login(Mono<LoginRequest> loginRequest) {
+  public Mono<ResponseEntity<Login200Response>> login(
+      Mono<LoginRequest> loginRequest, String requestId) {
     return loginRequest.flatMap(
         request ->
             userRepository
                 .findByEmail(request.getEmail())
-                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR1)))
-                .flatMap(user -> validateAndSaveLoginHistoryRequest(request, user))
+                .switchIfEmpty(
+                    Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR1, requestId)))
+                .flatMap(user -> validateAndSaveLoginHistoryRequest(request, user, requestId))
                 .flatMap(
                     user -> {
                       // Generate and save refresh token
@@ -81,94 +82,158 @@ public class AuthServiceImpl implements AuthService {
 
   @Override
   public Mono<ResponseEntity<RefreshToken200Response>> refreshToken(
-      Mono<RefreshTokenRequest> refreshTokenRequest) {
+      Mono<RefreshTokenRequest> refreshTokenRequest, String requestId) {
     return refreshTokenRequest.flatMap(
         request ->
             applicationTokenRepository
                 .findByToken(request.getRefreshToken())
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR16)))
-                .flatMap(this::validateRefreshTokenAndGenerateNewAccessToken)
-                .map(accessToken -> ResponseEntity.ok(mapRefreshTokenResponse(accessToken))));
+                .flatMap(token -> validateRefreshTokenAndGenerateNewAccessToken(token, requestId))
+                .map(
+                    accessToken ->
+                        ResponseEntity.ok(mapRefreshTokenResponse(accessToken, requestId))));
   }
 
-  private RefreshToken200Response mapRefreshTokenResponse(String accessToken) {
+  private RefreshToken200Response mapRefreshTokenResponse(String accessToken, String requestId) {
     return new RefreshToken200Response()
-        .requestId(Utils.generateRequestId())
+        .requestId(requestId)
         .message("Refresh token successful")
         .data(new RefreshToken200ResponseAllOfData().accessToken(accessToken));
   }
 
   @Override
   public Mono<ResponseEntity<CommonResponse>> forgotPassword(
-      Mono<ForgotPasswordRequest> forgotPasswordRequest) {
+      Mono<ForgotPasswordRequest> forgotPasswordRequest, String requestId) {
     return forgotPasswordRequest.flatMap(
-        request ->
-            userRepository
-                .findByEmail(request.getEmail())
-                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR1)))
-                .flatMap(
-                    user -> {
-                      VerificationCode verificationCode =
-                          mailService.createEmailVerificationCodeForgotPassword(user);
-                      return verificationCodeRepository
-                          .save(verificationCode)
-                          .doOnNext(
-                              saveVerificationCode ->
-                                  mailService.sendVerificationEmail(
-                                      "Email Verification for forgot password",
-                                      user.getEmail(),
-                                      verificationCode));
-                    })
-                .map(
-                    verificationCode ->
-                        Utils.createCommonSuccessResponse(
-                            "Verification code is sent to your email. Please check your email to verify your account.")));
+        request -> {
+          return userRepository
+              .findByEmail(request.getEmail())
+              .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR1, requestId)))
+              .flatMap(
+                  user -> {
+                    VerificationCode verificationCode =
+                        mailService.createEmailVerificationCodeForgotPassword(user);
+                    return verificationCodeRepository
+                        .save(verificationCode)
+                        .doOnNext(
+                            saveVerificationCode ->
+                                mailService.sendVerificationEmail(
+                                    "Email Verification for forgot password",
+                                    user.getEmail(),
+                                    verificationCode));
+                  })
+              .map(
+                  verificationCode ->
+                      Utils.createCommonSuccessResponse(
+                          "Verification code is sent to your email. Please check your email to verify your account.",
+                          requestId));
+        });
   }
 
   @Override
   public Mono<ResponseEntity<CommonResponse>> resetPassword(
-      Mono<ResetPasswordRequest> resetPasswordRequest) {
+      Mono<ResetPasswordRequest> resetPasswordRequest, String requestId) {
     return resetPasswordRequest.flatMap(
-        request ->
-            applicationTokenRepository
-                .findByToken(request.getResetPasswordToken())
-                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR19)))
-                .flatMap(
-                    token -> {
-                      // validate the reset password token
-                      ErrorCode errorCode = validResetPasswordToken(token);
+        request -> {
+          return applicationTokenRepository
+              .findByToken(request.getResetPasswordToken())
+              .switchIfEmpty(
+                  Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR19, requestId)))
+              .flatMap(
+                  token -> {
+                    // validate the reset password token
+                    ErrorCode errorCode = validResetPasswordToken(token);
 
-                      if (errorCode != null) {
-                        return Mono.error(new ApplicationException(errorCode));
-                      }
-                      String userId = jwtUtils.extractUserId(request.getResetPasswordToken());
+                    if (errorCode != null) {
+                      return Mono.error(new ApplicationException(errorCode));
+                    }
+                    String userId = jwtUtils.extractUserId(request.getResetPasswordToken());
 
-                      // get the user and then reset the password
+                    // get the user and then reset the password
+                    return userRepository
+                        .findById(Utils.convertStringToUUID(userId))
+                        .switchIfEmpty(
+                            Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR1, requestId)))
+                        .flatMap(
+                            user -> {
+                              // resetting user password
+                              user.setPasswordHash(
+                                  passwordEncoder.encode(request.getNewPassword()));
+                              // mark the token as used
+                              token.setUsageCount(token.getUsageCount() + 1);
+
+                              return userRepository
+                                  .save(user)
+                                  .then(applicationTokenRepository.save(token));
+                            });
+                  })
+              .map(
+                  savedToken ->
+                      Utils.createCommonSuccessResponse("Reset password successfully", requestId));
+        });
+  }
+
+  @Override
+  public Mono<ResponseEntity<CommonResponse>> changePassword(
+      Mono<ChangePasswordRequest> changePasswordRequest, String requestId, UUID userId) {
+    return changePasswordRequest.flatMap(
+        request -> {
+          return userRepository
+              .findById(userId)
+              .flatMap(
+                  user -> {
+                    String oldPassword = request.getOldPassword();
+                    String newPassword = request.getNewPassword();
+                    if (passwordEncoder.matches(oldPassword, user.getPasswordHash())) {
+                      user.setPasswordHash(passwordEncoder.encode(newPassword));
                       return userRepository
-                          .findById(Utils.convertStringToUUID(userId))
-                          .switchIfEmpty(
-                              Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR1)))
-                          .flatMap(
-                              user -> {
-                                // resetting user password
-                                user.setPasswordHash(
-                                    passwordEncoder.encode(request.getNewPassword()));
-                                // mark the token as used
-                                token.setUsageCount(token.getUsageCount() + 1);
+                          .save(user)
+                          .then(
+                              Mono.just(
+                                  Utils.createCommonSuccessResponse(
+                                      "Change password successfully", requestId)));
+                    } else {
+                      throw new ApplicationException(ErrorCode.AUTH_ERROR21, requestId);
+                    }
+                  });
+        });
+  }
 
-                                return userRepository
-                                    .save(user)
-                                    .then(applicationTokenRepository.save(token));
-                              });
-                    })
-                .map(
-                    savedToken ->
-                        Utils.createCommonSuccessResponse("Reset password successfully")));
+  @Override
+  public Mono<ResponseEntity<CheckEmailExists200Response>> checkEmailExists(
+      Mono<CheckEmailExistsRequest> checkEmailExistsRequest, String requestId) {
+    return checkEmailExistsRequest.flatMap(
+        request ->
+            userRepository
+                .existsByEmail(request.getEmail())
+                .flatMap(
+                    isExist ->
+                        Boolean.TRUE.equals(isExist)
+                            ? Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR2))
+                            : Mono.just(
+                                ResponseEntity.ok(Utils.mapCheckEmailExistsResponse(requestId))))
+                .doOnError(e -> log.error("Error checking email exists", e)));
+  }
+
+  @Override
+  public Mono<ResponseEntity<CheckUsernameExists200Response>> checkUsernameExists(
+      Mono<CheckUsernameExistsRequest> checkUsernameExistsRequest, String requestId) {
+    return checkUsernameExistsRequest.flatMap(
+        request ->
+            userRepository
+                .existsByUsername(request.getUsername())
+                .flatMap(
+                    isExist ->
+                        Boolean.TRUE.equals(isExist)
+                            ? Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR2))
+                            : Mono.just(
+                                ResponseEntity.ok(Utils.mapCheckUsernameExistsResponse(requestId))))
+                .doOnError(e -> log.error("Error checking email exists", e)));
   }
 
   private ErrorCode validResetPasswordToken(ApplicationToken token) {
     boolean isExpired = jwtUtils.isTokenExpired(token.getToken());
-    boolean isUsed = Objects.equals(token.getUsageCount(), token.getLimitUsageCount());
+    boolean isUsed = token.getUsageCount() == token.getLimitUsageCount();
 
     if (isExpired || isUsed) {
       return ErrorCode.AUTH_ERROR20;
@@ -185,7 +250,8 @@ public class AuthServiceImpl implements AuthService {
       Flux<Part> city,
       Flux<Part> dateOfBirth,
       Flux<Part> gender,
-      Flux<Part> avatar) {
+      Flux<Part> avatar,
+      String requestId) {
     return Mono.zip(
             Utils.extractValue(email),
             Utils.extractValue(password),
@@ -244,7 +310,8 @@ public class AuthServiceImpl implements AuthService {
                   .map(
                       savedUser ->
                           Utils.createCommonSuccessResponse(
-                              "Registration successful. Please check your email to verify your account."));
+                              "Registration successful. Please check your email to verify your account.",
+                              requestId));
             });
   }
 
@@ -265,17 +332,18 @@ public class AuthServiceImpl implements AuthService {
         .thenReturn(savedUser);
   }
 
-  private Mono<User> validateAndSaveLoginHistoryRequest(LoginRequest request, User user) {
+  private Mono<User> validateAndSaveLoginHistoryRequest(
+      LoginRequest request, User user, String requestId) {
     // Check if password is correct
     if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
       return saveFailedLoginHistory(user.getId(), request)
-          .then(Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR5)));
+          .then(Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR5, requestId)));
     }
 
     // Check if account is verified
     if (user.getAccountStatus() == User.AccountStatus.UNVERIFIED) {
       return saveFailedLoginHistory(user.getId(), request)
-          .then(Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR3)));
+          .then(Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR3, requestId)));
     }
 
     // TODO: save user login history here
@@ -386,14 +454,14 @@ public class AuthServiceImpl implements AuthService {
   }
 
   private Mono<String> validateRefreshTokenAndGenerateNewAccessToken(
-      ApplicationToken refreshToken) {
+      ApplicationToken refreshToken, String requestId) {
     return Mono.just(refreshToken)
         .flatMap(
             token -> {
               // validate token
               ErrorCode errorCode = validateRefreshToken(token);
               if (errorCode != null) {
-                return Mono.error(new ApplicationException(errorCode));
+                return Mono.error(new ApplicationException(errorCode, requestId));
               }
               return Mono.just(refreshToken);
             })
@@ -405,7 +473,8 @@ public class AuthServiceImpl implements AuthService {
 
               return userRepository
                   .findById(userId)
-                  .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR1)));
+                  .switchIfEmpty(
+                      Mono.error(new ApplicationException(ErrorCode.AUTH_ERROR1, requestId)));
             })
         .flatMap(
             user -> {
